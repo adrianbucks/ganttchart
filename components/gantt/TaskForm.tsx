@@ -3,78 +3,101 @@
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
-import { PlusCircle } from 'lucide-react'
 import { Task } from '@/types/project'
+import { Textarea } from '@/components/ui/textarea'
 
 interface TaskFormProps {
 	tasks: Task[]
-	newTask: Task
+	task: Task
 	onTaskChange: (task: Task) => void
-	onTaskAdd: () => void
+	onTaskSubmit: () => void
 	disabled?: boolean
+	mode: 'add' | 'edit'
 }
 
 export function TaskForm({
 	tasks,
-	newTask,
+	task,
 	onTaskChange,
-	onTaskAdd,
+	onTaskSubmit,
+	disabled,
+	mode,
 }: TaskFormProps) {
 	return (
-		<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-			<div>
-				<Label>Task Name</Label>
+		<div className="space-y-6">
+			<div className="space-y-2">
+				<Label htmlFor="name">Task Name</Label>
 				<Input
-					value={newTask.name}
+					id="name"
+					value={task.name}
 					onChange={(e) =>
-						onTaskChange({ ...newTask, name: e.target.value })
+						onTaskChange({ ...task, name: e.target.value })
 					}
 					placeholder="Enter task name"
-					className="mt-1"
 				/>
 			</div>
-			<div>
-				<Label>Duration (days)</Label>
+
+			<div className="space-y-2">
+				<Label htmlFor="description">Description</Label>
+				<Textarea
+					id="description"
+					value={task.description || ''}
+					onChange={(e) =>
+						onTaskChange({ ...task, description: e.target.value })
+					}
+					placeholder="Enter task description"
+					rows={3}
+				/>
+			</div>
+
+			<div className="space-y-2">
+				<Label htmlFor="duration">Duration (days)</Label>
 				<Input
+					id="duration"
 					type="number"
-					value={newTask.duration}
+					min="1"
+					value={task.duration}
 					onChange={(e) =>
 						onTaskChange({
-							...newTask,
+							...task,
 							duration: Number(e.target.value),
 						})
 					}
 					placeholder="Enter duration"
-					className="mt-1"
 				/>
 			</div>
-			<div>
-				<Label>Dependencies</Label>
+
+			<div className="space-y-2">
+				<Label htmlFor="dependencies">Dependencies</Label>
 				<select
+					id="dependencies"
 					multiple
-					value={newTask.dependencies}
+					value={task.dependencies || []}
 					onChange={(e) =>
 						onTaskChange({
-							...newTask,
+							...task,
 							dependencies: Array.from(
 								e.target.selectedOptions,
 								(option) => option.value
 							),
 						})
 					}
-					className="w-full mt-1 rounded-md border border-gray-300"
+					className="w-full rounded-md border border-input bg-transparent px-3 py-2 min-h-[100px]"
 				>
-					{tasks.map((task) => (
-						<option key={task.id} value={task.id}>
-							{task.name}
+					{tasks.map((t) => (
+						<option key={t.id} value={t.id}>
+							{t.name}
 						</option>
 					))}
 				</select>
+				<p className="text-sm text-muted-foreground">
+					Hold Ctrl/Cmd to select multiple tasks
+				</p>
 			</div>
-			<div className="flex items-end">
-				<Button onClick={onTaskAdd} className="w-full">
-					<PlusCircle className="mr-2 h-4 w-4" />
-					Add Task
+
+			<div className="flex justify-end pt-4">
+				<Button onClick={onTaskSubmit} disabled={disabled}>
+					{mode === 'add' ? 'Add Task' : 'Update Task'}
 				</Button>
 			</div>
 		</div>

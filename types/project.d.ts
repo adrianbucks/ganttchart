@@ -10,6 +10,7 @@ interface Project {
 interface Task {
 	id: string
 	name: string
+	description?: string
 	startDate: number
 	endDate: number
 	duration?: number

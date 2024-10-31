@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card'
 import { TimeScale } from './TimeScale'
 import { TaskBar } from './TaskBar'
 import { DependencyArrow } from './DependencyArrow'
-import { TaskForm } from './TaskForm'
+import { TaskFormModal } from './TaskFormModal'
 import { TaskList } from './TaskList'
 import { Project, Task } from '@/types/project'
 import { useProjects } from '@/hooks/useProjects'
@@ -14,6 +14,7 @@ import TaskFilter from './TaskFilter'
 import LoadingSpinner from '@/components/gantt/LoadingSpinner'
 import { Button } from '@/components/ui/button'
 import { toast } from '@/hooks/use-toast'
+import { ProjectDetails } from './ProjectDetails'
 
 interface GanttChartProps {
 	project: Project
@@ -36,6 +37,7 @@ export default function GanttChart({ project }: GanttChartProps) {
 	const [loading, setLoading] = useState(false)
 	const [isEditing, setIsEditing] = useState<string | null>(null)
 	const [showCompleted, setShowCompleted] = useState(true)
+	const [isTaskModalOpen, setIsTaskModalOpen] = useState(false)
 	// ... other useState declarations ...
 
 	const taskHeight = 40
@@ -305,12 +307,33 @@ export default function GanttChart({ project }: GanttChartProps) {
 			<div className="sticky top-0 z-10 bg-background p-4 border-b">
 				<div className="flex flex-col gap-4">
 					<div className="flex items-center justify-between">
-						<h1 className="text-2xl font-bold">{project.name}</h1>
-						<ZoomControls
-							onZoomIn={handleZoomIn}
-							onZoomOut={handleZoomOut}
-							onReset={handleZoomReset}
-						/>
+						<div>
+							<h1 className="text-2xl font-bold">
+								{project.name}
+							</h1>
+							<ProjectDetails
+								project={project}
+								onUpdate={updateProject}
+								variant="compact"
+							/>
+						</div>
+						<div className="flex items-center gap-4">
+							<TaskFormModal
+								open={isTaskModalOpen}
+								onOpenChange={setIsTaskModalOpen}
+								tasks={project.tasks}
+								task={newTask}
+								onTaskChange={setNewTask}
+								onTaskSubmit={handleAddTask}
+								mode="add"
+								disabled={loading}
+							/>
+							<ZoomControls
+								onZoomIn={handleZoomIn}
+								onZoomOut={handleZoomOut}
+								onReset={handleZoomReset}
+							/>
+						</div>
 					</div>
 
 					<div className="flex items-center justify-between">
@@ -334,14 +357,6 @@ export default function GanttChart({ project }: GanttChartProps) {
 
 			<div className="p-4">
 				<Card className="p-6">
-					<TaskForm
-						tasks={project.tasks}
-						newTask={newTask}
-						onTaskChange={setNewTask}
-						onTaskAdd={handleAddTask}
-						disabled={loading}
-					/>
-
 					<div className="mt-8">
 						{filteredTasks.length === 0 ? (
 							<div className="text-center py-8 text-muted-foreground">
