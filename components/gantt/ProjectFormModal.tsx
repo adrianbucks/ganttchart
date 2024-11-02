@@ -12,8 +12,6 @@ interface ProjectFormModalProps {
 	project?: Project | null | undefined
 	open: boolean
 	onOpenChange: (open: boolean) => void
-	onProjectChange: (project: Project) => void
-	onProjectSubmit: () => void
 	mode: 'add' | 'edit'
 	disabled?: boolean
 }
@@ -22,16 +20,9 @@ export function ProjectFormModal({
 	project,
 	open,
 	onOpenChange,
-	onProjectChange,
-	onProjectSubmit,
 	mode,
 	disabled,
 }: ProjectFormModalProps) {
-	const handleSubmit = () => {
-		onProjectSubmit()
-		onOpenChange(false)
-	}
-
 	return (
 		<>
 			<Dialog open={open} onOpenChange={onOpenChange}>
@@ -45,10 +36,9 @@ export function ProjectFormModal({
 					</DialogHeader>
 					<ProjectForm
 						project={project}
-						onProjectChange={onProjectChange}
-						onProjectSubmit={handleSubmit}
 						mode={mode}
 						disabled={disabled}
+						onSuccess={() => onOpenChange(false)}
 					/>
 				</DialogContent>
 			</Dialog>

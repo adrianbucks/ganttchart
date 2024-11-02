@@ -9,7 +9,7 @@ import { useProjects } from '@/hooks/useProjects'
 import type { Project } from '@/types/project'
 
 export function ProjectDashboard() {
-	const { projects, addProject, deleteProject, updateProject } = useProjects()
+	const { projects, deleteProject } = useProjects()
 	const [selectedProject, setSelectedProject] = useState<Project | null>(null)
 	const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false)
 	const [isEditProjectModalOpen, setIsEditProjectModalOpen] = useState(false)
@@ -50,16 +50,12 @@ export function ProjectDashboard() {
 				<ProjectFormModal
 					open={isNewProjectModalOpen}
 					onOpenChange={setIsNewProjectModalOpen}
-					onProjectChange={addProject}
-					onProjectSubmit={() => setIsNewProjectModalOpen(false)}
 					mode="add"
 				/>
 				<ProjectFormModal
 					open={isEditProjectModalOpen}
 					onOpenChange={setIsEditProjectModalOpen}
 					project={selectedProject}
-					onProjectChange={updateProject}
-					onProjectSubmit={() => setIsEditProjectModalOpen(false)}
 					mode="edit"
 				/>
 			</main>

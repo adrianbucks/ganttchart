@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { PlusCircle, MoreHorizontal } from 'lucide-react'
 import { useEffect } from 'react'
+
 import { Project } from '@/types/project'
 
 interface AppSidebarProps {

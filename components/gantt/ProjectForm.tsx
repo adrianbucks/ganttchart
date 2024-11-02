@@ -5,23 +5,23 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
+import { useProjects } from '@/hooks/useProjects'
 
 import type { Project } from '@/types/project'
 
 interface ProjectFormProps {
 	project?: Project | null | undefined
-	onProjectChange?: (project: Project) => void
-	onProjectSubmit?: (project: Project) => void
 	mode: 'add' | 'edit'
 	disabled?: boolean
+	onSuccess?: () => void
 }
 export function ProjectForm({
 	project,
-	onProjectChange,
-	onProjectSubmit,
 	mode,
 	disabled,
+	onSuccess,
 }: ProjectFormProps) {
+	const { addProject, updateProject } = useProjects()
 	const [formData, setFormData] = useState({
 		id: project?.id || crypto.randomUUID(),
 		name: project?.name || '',
@@ -32,14 +32,20 @@ export function ProjectForm({
 			project?.endDate || new Date().getTime() + 7 * 24 * 60 * 60 * 1000,
 	})
 
-	const handleChange = (field: keyof Project, value: string | number) => {
-		const updatedProject = { ...formData, [field]: value }
-		setFormData(updatedProject)
-		onProjectChange?.(updatedProject)
+	const handleChange = (
+		field: keyof Project,
+		value: string | number | []
+	) => {
+		setFormData((prev) => ({ ...prev, [field]: value }))
 	}
 
 	const handleSubmit = () => {
-		onProjectSubmit?.(formData)
+		if (mode === 'add') {
+			addProject(formData)
+		} else {
+			updateProject(formData)
+		}
+		onSuccess?.()
 	}
 
 	return (
