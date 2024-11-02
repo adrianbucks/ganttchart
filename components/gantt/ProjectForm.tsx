@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
+import { toast } from '@/hooks/use-toast'
 import { useProjects } from '@/hooks/useProjects'
 
 import type { Project } from '@/types/project'
@@ -42,8 +43,16 @@ export function ProjectForm({
 	const handleSubmit = () => {
 		if (mode === 'add') {
 			addProject(formData)
+			toast({
+				title: formData.name,
+				description: 'Project added successfully',
+			})
 		} else {
 			updateProject(formData)
+			toast({
+				title: formData.name,
+				description: 'Project updated successfully',
+			})
 		}
 		onSuccess?.()
 	}

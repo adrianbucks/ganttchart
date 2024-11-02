@@ -3,9 +3,10 @@
 import { useState } from 'react'
 import { SidebarTrigger, SidebarProvider } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/gantt/AppSidebar'
-import { ProjectFormModal } from './ProjectFormModal'
-import GanttChart from './GanttChart'
+import { ProjectFormModal } from '@/components/gantt/ProjectFormModal'
+import GanttChart from '@/components/gantt/GanttChart'
 import { useProjects } from '@/hooks/useProjects'
+
 import type { Project } from '@/types/project'
 
 export function ProjectDashboard() {
@@ -28,7 +29,7 @@ export function ProjectDashboard() {
 
 	return (
 		<SidebarProvider defaultOpen={true}>
-			<main className="flex h-screen">
+			<div className="flex w-full h-screen">
 				<AppSidebar
 					projects={projects}
 					selectedProject={selectedProject}
@@ -58,7 +59,7 @@ export function ProjectDashboard() {
 					project={selectedProject}
 					mode="edit"
 				/>
-			</main>
+			</div>
 		</SidebarProvider>
 	)
 }
