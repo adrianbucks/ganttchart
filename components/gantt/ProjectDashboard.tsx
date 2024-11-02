@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { Sidebar } from './Sidebar'
+import { SidebarTrigger, SidebarProvider } from '@/components/ui/sidebar'
+import { AppSidebar } from '@/components/gantt/AppSidebar'
 import { ProjectFormModal } from './ProjectFormModal'
 import GanttChart from './GanttChart'
 import { useProjects } from '@/hooks/useProjects'
@@ -12,7 +13,6 @@ export function ProjectDashboard() {
 	const [selectedProject, setSelectedProject] = useState<Project | null>(null)
 	const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false)
 	const [isEditProjectModalOpen, setIsEditProjectModalOpen] = useState(false)
-	const [isModalOpen, setIsModalOpen] = useState(false)
 
 	const handleDeleteProject = (projectId: string) => {
 		deleteProject(projectId)
@@ -23,62 +23,46 @@ export function ProjectDashboard() {
 
 	const handleEditProject = (project: Project) => {
 		setSelectedProject(project)
-		setIsModalOpen(true)
-	}
-
-	// const handleModalClose = () => {
-	// 	setIsModalOpen(false)
-	// 	setSelectedProject(null)
-	// }
-
-	const handleProjectCreate = (project: Project) => {
-		addProject(project)
-		setIsModalOpen(false)
-		setSelectedProject(null)
+		setIsEditProjectModalOpen(true)
 	}
 
 	return (
-		<div className="flex h-screen">
-			<Sidebar
-				projects={projects}
-				selectedProject={selectedProject}
-				onProjectSelect={setSelectedProject}
-				onNewProjectClick={() => {
-					setSelectedProject(null)
-					setIsModalOpen(true)
-				}}
-				onEditProject={handleEditProject}
-				onDeleteProject={handleDeleteProject}
-			/>
-			<div className="flex-1 overflow-auto">
-				{selectedProject ? (
-					<GanttChart project={selectedProject} />
-				) : (
-					<div className="flex items-center justify-center h-full text-muted-foreground">
-						Select a project to view its Gantt chart
-					</div>
-				)}
-			</div>
-			<ProjectFormModal
-				open={isNewProjectModalOpen}
-				onOpenChange={setIsNewProjectModalOpen}
-				onProjectCreate={addProject}
-			/>
-			<ProjectFormModal
-				open={isEditProjectModalOpen}
-				onOpenChange={setIsEditProjectModalOpen}
-				onProjectCreate={updateProject}
-				project={selectedProject}
-			/>
-			{isModalOpen && (
-				<ProjectFormModal
-					open={isModalOpen}
-					onOpenChange={setIsModalOpen}
-					onProjectCreate={handleProjectCreate}
-					project={selectedProject}
-					// onClose={handleModalClose}
+		<SidebarProvider defaultOpen={true}>
+			<main className="flex h-screen">
+				<AppSidebar
+					projects={projects}
+					selectedProject={selectedProject}
+					onProjectSelect={setSelectedProject}
+					onNewProjectClick={() => setIsNewProjectModalOpen(true)}
+					onEditProject={handleEditProject}
+					onDeleteProject={handleDeleteProject}
 				/>
-			)}
-		</div>
+				<SidebarTrigger />
+				<div className="flex-1 overflow-auto">
+					{selectedProject ? (
+						<GanttChart project={selectedProject} />
+					) : (
+						<div className="flex items-center justify-center h-full text-muted-foreground">
+							Select a project to view its Gantt chart
+						</div>
+					)}
+				</div>
+				<ProjectFormModal
+					open={isNewProjectModalOpen}
+					onOpenChange={setIsNewProjectModalOpen}
+					onProjectChange={addProject}
+					onProjectSubmit={() => setIsNewProjectModalOpen(false)}
+					mode="add"
+				/>
+				<ProjectFormModal
+					open={isEditProjectModalOpen}
+					onOpenChange={setIsEditProjectModalOpen}
+					project={selectedProject}
+					onProjectChange={updateProject}
+					onProjectSubmit={() => setIsEditProjectModalOpen(false)}
+					mode="edit"
+				/>
+			</main>
+		</SidebarProvider>
 	)
 }

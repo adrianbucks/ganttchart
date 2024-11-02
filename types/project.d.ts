@@ -1,6 +1,7 @@
 interface Project {
 	id: string
 	name: string
+	description?: string
 	tasks: Task[]
 	startDate: number
 	endDate: number

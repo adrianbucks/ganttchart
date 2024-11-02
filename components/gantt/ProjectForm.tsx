@@ -4,56 +4,94 @@ import { useState } from 'react'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/textarea'
 
 import type { Project } from '@/types/project'
 
+interface ProjectFormProps {
+	project?: Project | null | undefined
+	onProjectChange?: (project: Project) => void
+	onProjectSubmit?: (project: Project) => void
+	mode: 'add' | 'edit'
+	disabled?: boolean
+}
 export function ProjectForm({
-	onProjectCreate,
-}: {
-	onProjectCreate: (project: Project) => void
-}) {
-	const [name, setName] = useState('')
-	const [startDate, setStartDate] = useState(
-		new Date().toISOString().split('T')[0]
-	)
+	project,
+	onProjectChange,
+	onProjectSubmit,
+	mode,
+	disabled,
+}: ProjectFormProps) {
+	const [formData, setFormData] = useState({
+		id: project?.id || crypto.randomUUID(),
+		name: project?.name || '',
+		description: project?.description || '',
+		tasks: project?.tasks || [],
+		startDate: project?.startDate || new Date().getTime(),
+		endDate:
+			project?.endDate || new Date().getTime() + 7 * 24 * 60 * 60 * 1000,
+	})
 
-	const handleSubmit = (e: React.FormEvent) => {
-		e.preventDefault()
-		const start = new Date(startDate).getTime()
-		const newProject = {
-			id: crypto.randomUUID(),
-			name,
-			tasks: [],
-			startDate: start,
-			endDate: start + 7 * 24 * 60 * 60 * 1000, // Default 7 days duration
-		}
-		onProjectCreate(newProject)
-		setName('')
-		setStartDate(new Date().toISOString().split('T')[0])
+	const handleChange = (field: keyof Project, value: string | number) => {
+		const updatedProject = { ...formData, [field]: value }
+		setFormData(updatedProject)
+		onProjectChange?.(updatedProject)
+	}
+
+	const handleSubmit = () => {
+		onProjectSubmit?.(formData)
 	}
 
 	return (
-		<form onSubmit={handleSubmit} className="space-y-4">
-			<div>
-				<Label>Project Name</Label>
+		<div className="space-y-6">
+			<div className="space-y-2">
+				<Label htmlFor="name">Project Name</Label>
 				<Input
-					type="text"
-					value={name}
-					onChange={(e) => setName(e.target.value)}
+					id="name"
+					value={formData.name}
+					onChange={(e) => handleChange('name', e.target.value)}
 					placeholder="Enter project name"
-					className="mt-1"
+					disabled={disabled}
 				/>
 			</div>
-			<div>
-				<Label>Start Date</Label>
+
+			<div className="space-y-2">
+				<Label htmlFor="description">Description</Label>
+				<Textarea
+					id="description"
+					value={formData.description}
+					onChange={(e) =>
+						handleChange('description', e.target.value)
+					}
+					placeholder="Enter project description"
+					rows={3}
+					disabled={disabled}
+				/>
+			</div>
+
+			<div className="space-y-2">
+				<Label htmlFor="startDate">Start Date</Label>
 				<Input
+					id="startDate"
 					type="date"
-					value={startDate}
-					onChange={(e) => setStartDate(e.target.value)}
-					className="mt-1"
+					value={
+						new Date(formData.startDate).toISOString().split('T')[0]
+					}
+					onChange={(e) =>
+						handleChange(
+							'startDate',
+							new Date(e.target.value).getTime()
+						)
+					}
+					disabled={disabled}
 				/>
 			</div>
-			<Button type="submit">Create Project</Button>
-		</form>
+
+			<div className="flex justify-end pt-4">
+				<Button onClick={handleSubmit} disabled={disabled}>
+					{mode === 'add' ? 'Create Project' : 'Update Project'}
+				</Button>
+			</div>
+		</div>
 	)
 }

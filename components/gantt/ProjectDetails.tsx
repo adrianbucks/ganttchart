@@ -30,9 +30,14 @@ export function ProjectDetails({
 			<div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
 				<div className="flex items-center gap-2">
 					<Calendar className="h-4 w-4" />
+					<Label>Start Date</Label>
 					<Input
 						type="date"
-						value={new Date(project.startDate).toISOString().split('T')[0]}
+						value={
+							new Date(project.startDate)
+								.toISOString()
+								.split('T')[0]
+						}
 						onChange={(e) => handleDateChange(e.target.value)}
 						className="h-8 w-auto"
 					/>
@@ -57,7 +62,11 @@ export function ProjectDetails({
 					<Label>Project Start Date</Label>
 					<Input
 						type="date"
-						value={new Date(project.startDate).toISOString().split('T')[0]}
+						value={
+							new Date(project.startDate)
+								.toISOString()
+								.split('T')[0]
+						}
 						onChange={(e) => handleDateChange(e.target.value)}
 						className="mt-1"
 					/>

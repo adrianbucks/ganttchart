@@ -15,7 +15,6 @@ import LoadingSpinner from '@/components/gantt/LoadingSpinner'
 import { Button } from '@/components/ui/button'
 import { toast } from '@/hooks/use-toast'
 import { ProjectDetails } from './ProjectDetails'
-
 interface GanttChartProps {
 	project: Project
 }
@@ -38,10 +37,10 @@ export default function GanttChart({ project }: GanttChartProps) {
 	const [isEditing, setIsEditing] = useState<string | null>(null)
 	const [showCompleted, setShowCompleted] = useState(true)
 	const [isTaskModalOpen, setIsTaskModalOpen] = useState(false)
-	// ... other useState declarations ...
 
 	const taskHeight = 40
 
+	// TODO: Move to utils
 	const calculateDates = (taskList: Task[], newTask?: Task) => {
 		const updatedTasks = [...taskList]
 		if (newTask) {
@@ -303,7 +302,7 @@ export default function GanttChart({ project }: GanttChartProps) {
 	if (loading) return <LoadingSpinner />
 
 	return (
-		<div className="relative">
+		<>
 			<div className="sticky top-0 z-10 bg-background p-4 border-b">
 				<div className="flex flex-col gap-4">
 					<div className="flex items-center justify-between">
@@ -461,6 +460,6 @@ export default function GanttChart({ project }: GanttChartProps) {
 					</div>
 				</Card>
 			</div>
-		</div>
+		</>
 	)
 }
