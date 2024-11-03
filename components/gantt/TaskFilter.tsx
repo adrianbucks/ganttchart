@@ -1,17 +1,14 @@
 import React from 'react'
 import { Search } from 'lucide-react'
+import { useTasks } from '@/hooks/useTasks'
+import { Project } from '@/types/project'
 
 interface TaskFilterProps {
-	searchTerm: string
-	onSearchChange: (value: string) => void
-	onFilterChange: (filter: string) => void
+	project: Project
 }
+export default function TaskFilter({ project }: TaskFilterProps) {
+	const { searchTerm, filter, setSearchTerm, setFilter } = useTasks(project)
 
-const TaskFilter = ({
-	searchTerm,
-	onSearchChange,
-	onFilterChange,
-}: TaskFilterProps) => {
 	return (
 		<div className="flex gap-4 mb-4">
 			<div className="relative flex-1">
@@ -22,13 +19,14 @@ const TaskFilter = ({
 				<input
 					type="text"
 					value={searchTerm}
-					onChange={(e) => onSearchChange(e.target.value)}
+					onChange={(e) => setSearchTerm(e.target.value)}
 					placeholder="Search tasks..."
 					className="w-full pl-10 pr-4 py-2 border rounded-md"
 				/>
 			</div>
 			<select
-				onChange={(e) => onFilterChange(e.target.value)}
+				value={filter}
+				onChange={(e) => setFilter(e.target.value)}
 				className="border rounded-md px-3 py-2"
 			>
 				<option value="all">All Tasks</option>
@@ -39,5 +37,3 @@ const TaskFilter = ({
 		</div>
 	)
 }
-
-export default TaskFilter

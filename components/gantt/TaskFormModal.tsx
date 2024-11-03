@@ -7,33 +7,28 @@ import {
 	DialogTitle,
 } from '@/components/ui/dialog'
 import { TaskForm } from './TaskForm'
-import { Task } from '@/types/project'
+import { Project, Task } from '@/types/project'
 import { Button } from '@/components/ui/button'
 import { PlusCircle } from 'lucide-react'
 
 interface TaskFormModalProps {
 	open: boolean
 	onOpenChange: (open: boolean) => void
-	tasks: Task[]
+	project: Project
 	task: Task
 	onTaskChange: (task: Task) => void
-	onTaskSubmit: () => void
 	mode: 'add' | 'edit'
-	disabled?: boolean
 }
 
 export function TaskFormModal({
 	open,
 	onOpenChange,
-	tasks,
+	project,
 	task,
 	onTaskChange,
-	onTaskSubmit,
 	mode,
-	disabled,
 }: TaskFormModalProps) {
 	const handleSubmit = () => {
-		onTaskSubmit()
 		onOpenChange(false)
 	}
 
@@ -54,11 +49,10 @@ export function TaskFormModal({
 						</DialogTitle>
 					</DialogHeader>
 					<TaskForm
-						tasks={tasks.filter((t) => t.id !== task.id)}
+						project={project}
 						task={task}
 						onTaskChange={onTaskChange}
 						onTaskSubmit={handleSubmit}
-						disabled={disabled}
 						mode={mode}
 					/>
 				</DialogContent>

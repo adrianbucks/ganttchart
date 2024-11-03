@@ -3,26 +3,37 @@
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
-import { Task } from '@/types/project'
+import { Project, Task } from '@/types/project'
 import { Textarea } from '@/components/ui/textarea'
+import { useTasks } from '@/hooks/useTasks'
 
 interface TaskFormProps {
-	tasks: Task[]
+	project: Project
 	task: Task
 	onTaskChange: (task: Task) => void
 	onTaskSubmit: () => void
-	disabled?: boolean
 	mode: 'add' | 'edit'
+	disabled?: boolean
 }
 
 export function TaskForm({
-	tasks,
+	project,
 	task,
 	onTaskChange,
 	onTaskSubmit,
-	disabled,
 	mode,
 }: TaskFormProps) {
+	const { tasks, loading, addTask, updateTask } = useTasks(project)
+
+	const handleSubmit = () => {
+		if (mode === 'add') {
+			addTask(task)
+		} else {
+			updateTask(task)
+		}
+		onTaskSubmit()
+	}
+
 	return (
 		<div className="space-y-6">
 			<div className="space-y-2">
@@ -34,6 +45,7 @@ export function TaskForm({
 						onTaskChange({ ...task, name: e.target.value })
 					}
 					placeholder="Enter task name"
+					disabled={loading}
 				/>
 			</div>
 
@@ -47,6 +59,7 @@ export function TaskForm({
 					}
 					placeholder="Enter task description"
 					rows={3}
+					disabled={loading}
 				/>
 			</div>
 
@@ -64,6 +77,7 @@ export function TaskForm({
 						})
 					}
 					placeholder="Enter duration"
+					disabled={loading}
 				/>
 			</div>
 
@@ -83,12 +97,15 @@ export function TaskForm({
 						})
 					}
 					className="w-full rounded-md border border-input bg-transparent px-3 py-2 min-h-[100px]"
+					disabled={loading}
 				>
-					{tasks.map((t) => (
-						<option key={t.id} value={t.id}>
-							{t.name}
-						</option>
-					))}
+					{tasks
+						.filter((t) => t.id !== task.id)
+						.map((t) => (
+							<option key={t.id} value={t.id}>
+								{t.name}
+							</option>
+						))}
 				</select>
 				<p className="text-sm text-muted-foreground">
 					Hold Ctrl/Cmd to select multiple tasks
@@ -96,7 +113,7 @@ export function TaskForm({
 			</div>
 
 			<div className="flex justify-end pt-4">
-				<Button onClick={onTaskSubmit} disabled={disabled}>
+				<Button onClick={handleSubmit} disabled={loading}>
 					{mode === 'add' ? 'Add Task' : 'Update Task'}
 				</Button>
 			</div>
