@@ -11,112 +11,94 @@ import {
 	SidebarMenuAction,
 	useSidebar,
 	SidebarHeader,
-} from '@/components/ui/sidebar'
-import {
+  } from '@/components/ui/sidebar'
+  import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { PlusCircle, MoreHorizontal } from 'lucide-react'
-import { useEffect } from 'react'
-
-import { Project } from '@/types/project'
-
-interface AppSidebarProps {
-	projects: Project[]
-	selectedProject: Project | null
-	onProjectSelect: (project: Project | null) => void
-	onNewProjectClick: () => void
-	onEditProject: (project: Project) => void
-	onDeleteProject: (projectId: string) => void
-}
-export function AppSidebar({
-	projects,
-	selectedProject,
-	onProjectSelect,
-	onNewProjectClick,
-	onEditProject,
-	onDeleteProject,
-}: AppSidebarProps) {
-	const { setOpen, setOpenMobile, isMobile } = useSidebar()
-
-	useEffect(() => {
-		if (isMobile) {
-			setOpen(false)
-			setOpenMobile(false)
-		} else {
-			setOpen(true)
-			setOpenMobile(true)
-		}
-	}, [isMobile, setOpen, setOpenMobile])
-
+  } from '@/components/ui/dropdown-menu'
+  import { MoreHorizontal } from 'lucide-react'
+  import { useTasksContext } from '@/hooks/useTasksContext'
+  import { TaskActionButton } from './TaskActionButton'
+  import { Task } from '@/types/task'
+  
+  export function AppSidebar() {
+	const { setOpenMobile, isMobile } = useSidebar()
+	const { state, selectTask } = useTasksContext()
+  
+	const projects = state.tasks.filter((task) => task.type === 'project')
+  
+	const handleProjectSelect = (project: Task) => {
+	  selectTask(project)
+	  if (isMobile) {
+		setOpenMobile(false)
+	  }
+	}
+  
 	return (
-		<Sidebar
-			side="left"
-			variant="sidebar"
-			collapsible="offcanvas"
-			// open={isMobile ? openMobile : open}
-			// onOpenChange={isMobile ? setOpenMobile : setOpen}
-		>
-			<SidebarHeader>Your Projects</SidebarHeader>
-			<SidebarContent>
-				<SidebarGroup>
-					<SidebarGroupLabel>Projects</SidebarGroupLabel>
-					<SidebarGroupAction
-						onClick={onNewProjectClick}
-						role="button"
-						title="Add Project"
+	  <Sidebar side="left" variant="sidebar" collapsible="offcanvas">
+		<SidebarHeader>Your Projects</SidebarHeader>
+		<SidebarContent>
+		  <SidebarGroup>
+			<SidebarGroupLabel>Projects</SidebarGroupLabel>
+			<SidebarGroupAction>
+			  <TaskActionButton
+				action="add"
+				task={{ parentTask: '', type: 'project' } as Task}
+				type="project"
+				showText={false}
+				wrapper="div"
+			  />
+			</SidebarGroupAction>
+			<SidebarGroupContent>
+			  <SidebarMenu>
+				{projects.map((project) => (
+				  <SidebarMenuItem key={project.id}>
+					<SidebarMenuButton
+					  onClick={() => handleProjectSelect(project)}
 					>
-						<PlusCircle />
-						<span className="sr-only">Add Project</span>
-					</SidebarGroupAction>
-					<SidebarGroupContent>
-						<SidebarMenu>
-							{projects.map((project) => (
-								<SidebarMenuItem key={project.id}>
-									<SidebarMenuButton
-										onClick={() => onProjectSelect(project)}
-										className={
-											selectedProject?.id === project.id
-												? 'bg-accent'
-												: ''
-										}
-									>
-										<span>{project.name}</span>
-									</SidebarMenuButton>
-									<DropdownMenu>
-										<DropdownMenuTrigger asChild>
-											<SidebarMenuAction>
-												<MoreHorizontal />
-											</SidebarMenuAction>
-										</DropdownMenuTrigger>
-										<DropdownMenuContent
-											side="right"
-											align="start"
-										>
-											<DropdownMenuItem
-												onClick={() =>
-													onEditProject(project)
-												}
-											>
-												<span>Edit Project</span>
-											</DropdownMenuItem>
-											<DropdownMenuItem
-												onClick={() =>
-													onDeleteProject(project.id)
-												}
-											>
-												<span>Delete Project</span>
-											</DropdownMenuItem>
-										</DropdownMenuContent>
-									</DropdownMenu>
-								</SidebarMenuItem>
-							))}
-						</SidebarMenu>
-					</SidebarGroupContent>
-				</SidebarGroup>
-			</SidebarContent>
-		</Sidebar>
+					  <span>{project.name}</span>
+					</SidebarMenuButton>
+					<div className="hidden md:block">
+					  <DropdownMenu>
+						<DropdownMenuTrigger asChild>
+						  <SidebarMenuAction>
+							<MoreHorizontal />
+						  </SidebarMenuAction>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent
+						  side="right"
+						  align="start"
+						>
+						  <DropdownMenuItem>
+							<TaskActionButton
+							  action="edit"
+							  task={project}
+							  type="project"
+							  showText={true}
+							  wrapper="div"
+							/>
+						  </DropdownMenuItem>
+						  <DropdownMenuItem>
+							<TaskActionButton
+							  action="delete"
+							  task={project}
+							  type="project"
+							  showText={true}
+							  wrapper="div"
+							/>
+						  </DropdownMenuItem>
+						</DropdownMenuContent>
+					  </DropdownMenu>
+					</div>
+				  </SidebarMenuItem>
+				))}
+			  </SidebarMenu>
+			</SidebarGroupContent>
+		  </SidebarGroup>
+		</SidebarContent>
+	  </Sidebar>
 	)
-}
+  }
+  

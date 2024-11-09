@@ -3,120 +3,308 @@
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
-import { Project, Task } from '@/types/project'
 import { Textarea } from '@/components/ui/textarea'
-import { useTasks } from '@/hooks/useTasks'
+import { useTasksContext } from '@/hooks/useTasksContext'
+import { useState } from 'react'
+import { projectTimes } from '@/lib/projectTimes'
+import { Task } from '@/types/task'
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion'
 
-interface TaskFormProps {
-	project: Project
-	task: Task
-	onTaskChange: (task: Task) => void
-	onTaskSubmit: () => void
-	mode: 'add' | 'edit'
-	disabled?: boolean
-}
+export function TaskForm() {
+  const { state, addTask, updateTask, deleteTask, setModalState, getChildTasks } = useTasksContext()
+  const { taskToAction, modalMode, taskType } = state
 
-export function TaskForm({
-	project,
-	task,
-	onTaskChange,
-	onTaskSubmit,
-	mode,
-}: TaskFormProps) {
-	const { tasks, loading, addTask, updateTask } = useTasks(project)
-
-	const handleSubmit = () => {
-		if (mode === 'add') {
-			addTask(task)
-		} else {
-			updateTask(task)
-		}
-		onTaskSubmit()
+  const [formData, setFormData] = useState(() => {
+	if (modalMode === 'add') {
+	  return {
+		id: crypto.randomUUID(),
+		name: '',
+		description: '',
+		startDate: taskType === 'project' ? Date.now() : state.selectedTask?.startDate || Date.now(),
+		endDate: Date.now() + (taskType === 'project' ? 7 : 1) * 24 * 60 * 60 * 1000,
+		duration: taskType === 'project' ? 7 : 1,
+		progress: 0,
+		type: taskType,
+		parentTask: taskType === 'project' ? '' : state.selectedTask?.id || '',
+		dependencies: [],
+	  }
 	}
+	
+	return {
+	  id: taskToAction?.id || '',
+	  name: taskToAction?.name || '',
+	  description: taskToAction?.description || '',
+	  startDate: taskToAction?.startDate || Date.now(),
+	  endDate: taskToAction?.endDate || Date.now(),
+	  duration: taskToAction?.duration || 1,
+	  progress: taskToAction?.progress || 0,
+	  type: taskToAction?.type || 'task',
+	  parentTask: taskToAction?.parentTask || '',
+	  dependencies: taskToAction?.dependencies || [],
+	}
+  })
+  
 
-	return (
-		<div className="space-y-6">
-			<div className="space-y-2">
-				<Label htmlFor="name">Task Name</Label>
-				<Input
-					id="name"
-					value={task.name}
-					onChange={(e) =>
-						onTaskChange({ ...task, name: e.target.value })
-					}
-					placeholder="Enter task name"
-					disabled={loading}
-				/>
-			</div>
+  const projectTasks = formData.type !== 'project' ? 
+    getChildTasks(formData.parentTask).filter(t => t.type === 'task' && t.id !== formData.id) : 
+    []
 
-			<div className="space-y-2">
-				<Label htmlFor="description">Description</Label>
-				<Textarea
-					id="description"
-					value={task.description || ''}
-					onChange={(e) =>
-						onTaskChange({ ...task, description: e.target.value })
-					}
-					placeholder="Enter task description"
-					rows={3}
-					disabled={loading}
-				/>
-			</div>
+  if (modalMode === 'delete') {
+    return (
+      <div className="space-y-4">
+        <p className="text-muted-foreground">
+          This will also delete all child tasks and milestones.
+        </p>
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" onClick={() => setModalState(false, 'delete')}>
+            Cancel
+          </Button>
+          <Button 
+            variant="destructive" 
+            onClick={() => {
+              deleteTask(taskToAction!.id)
+              setModalState(false, 'delete')
+            }}
+          >
+            Delete
+          </Button>
+        </div>
+      </div>
+    )
+  }
 
-			<div className="space-y-2">
-				<Label htmlFor="duration">Duration (days)</Label>
-				<Input
-					id="duration"
-					type="number"
-					min="1"
-					value={task.duration}
-					onChange={(e) =>
-						onTaskChange({
-							...task,
-							duration: Number(e.target.value),
-						})
-					}
-					placeholder="Enter duration"
-					disabled={loading}
-				/>
-			</div>
+  const handleTaskChange = (updates: Partial<Task>) => {
+	setFormData(current => ({ ...current, ...updates }))
+  }  
 
-			<div className="space-y-2">
-				<Label htmlFor="dependencies">Dependencies</Label>
-				<select
-					id="dependencies"
-					multiple
-					value={task.dependencies || []}
-					onChange={(e) =>
-						onTaskChange({
-							...task,
-							dependencies: Array.from(
-								e.target.selectedOptions,
-								(option) => option.value
-							),
-						})
-					}
-					className="w-full rounded-md border border-input bg-transparent px-3 py-2 min-h-[100px]"
-					disabled={loading}
-				>
-					{tasks
-						.filter((t) => t.id !== task.id)
-						.map((t) => (
-							<option key={t.id} value={t.id}>
-								{t.name}
-							</option>
-						))}
-				</select>
-				<p className="text-sm text-muted-foreground">
-					Hold Ctrl/Cmd to select multiple tasks
-				</p>
-			</div>
+  const handleSubmit = (e: React.FormEvent) => {
+	e.preventDefault()
+	
+	let taskToSave = { ...formData }
+	
+	if (modalMode === 'add') {
+	  if (taskToSave.type === 'project') {
+		taskToSave = {
+		  ...taskToSave,
+		  duration: 7,
+		  endDate: taskToSave.startDate + (7 * 24 * 60 * 60 * 1000)
+		}
+		const updatedTasks = [...state.tasks, taskToSave]
+		addTask(taskToSave, updatedTasks)
+	  } else {
+		const parentProject = state.tasks.find(t => t.id === taskToSave.parentTask)!
+		const dependencies = state.tasks.filter(t => taskToSave.dependencies.includes(t.id))
+		
+		taskToSave = {
+		  ...taskToSave,
+		  duration: taskToSave.type === 'milestone' ? 0 : 1,
+		  ...projectTimes.calculateTaskDates(taskToSave, parentProject.startDate, dependencies)
+		}
+		
+		const updatedTasks = [...state.tasks, taskToSave]
+		const recalculatedProjectTasks = projectTimes.recalculateProjectDates(parentProject, updatedTasks)
+		const projectMetrics = projectTimes.calculateProjectMetrics(recalculatedProjectTasks)
+		const updatedProject = { ...parentProject, ...projectMetrics }
+		
+		const finalTasks = updatedTasks.map(task => 
+		  task.id === parentProject.id ? updatedProject :
+		  task.parentTask === parentProject.id ? 
+			recalculatedProjectTasks.find(t => t.id === task.id) || task : 
+			task
+		)
+		
+		addTask(taskToSave, finalTasks)
+	  }
+	} else {
+	  const updatedTasks = state.tasks.map(t => t.id === taskToSave.id ? taskToSave : t)
+	  
+	  if (taskToSave.type === 'project') {
+		const projectTasks = updatedTasks.filter(t => t.parentTask === taskToSave.id)
+		if (projectTasks.length > 0) {
+		  const recalculatedProjectTasks = projectTimes.recalculateProjectDates(taskToSave, updatedTasks)
+		  const projectMetrics = projectTimes.calculateProjectMetrics(recalculatedProjectTasks)
+		  const updatedProject = { ...taskToSave, ...projectMetrics }
+		  
+		  const finalTasks = updatedTasks.map(task => 
+			task.id === taskToSave.id ? updatedProject :
+			task.parentTask === taskToSave.id ? 
+			  recalculatedProjectTasks.find(t => t.id === task.id) || task : 
+			  task
+		  )
+		  
+		  updateTask(taskToSave, finalTasks)
+		} else {
+		  const defaultProject = {
+			...taskToSave,
+			duration: 7,
+			endDate: taskToSave.startDate + (7 * 24 * 60 * 60 * 1000)
+		  }
+		  updateTask(defaultProject, updatedTasks.map(t => 
+			t.id === taskToSave.id ? defaultProject : t
+		  ))
+		}
+	  } else {
+		const parentProject = state.tasks.find(t => t.id === taskToSave.parentTask)!
+		const dependencies = state.tasks.filter(t => taskToSave.dependencies.includes(t.id))
+		
+		taskToSave = {
+		  ...taskToSave,
+		  ...projectTimes.calculateTaskDates(taskToSave, parentProject.startDate, dependencies)
+		}
+		
+		const recalculatedProjectTasks = projectTimes.recalculateProjectDates(parentProject, updatedTasks)
+		const projectMetrics = projectTimes.calculateProjectMetrics(recalculatedProjectTasks)
+		const updatedProject = { ...parentProject, ...projectMetrics }
+		
+		const finalTasks = updatedTasks.map(task => 
+		  task.id === parentProject.id ? updatedProject :
+		  task.parentTask === parentProject.id ? 
+			recalculatedProjectTasks.find(t => t.id === task.id) || task : 
+			task
+		)
+		
+		updateTask(taskToSave, finalTasks)
+	  }
+	}
+	
+	setModalState(false, modalMode)
+  }   
+  
+  const currentParentTask = state.tasks.find(t => t.id === formData.parentTask)
+  
 
-			<div className="flex justify-end pt-4">
-				<Button onClick={handleSubmit} disabled={loading}>
-					{mode === 'add' ? 'Add Task' : 'Update Task'}
-				</Button>
-			</div>
+  return (
+    <form onSubmit={handleSubmit}>
+		<div className="text-sm text-muted-foreground mb-4">
+			Project: {currentParentTask?.name}
 		</div>
-	)
+      <div className="space-y-2">
+        <Label htmlFor="name">{formData.type} Name</Label>
+        <Input
+          id="name"
+          value={formData.name}
+          onChange={(e) => handleTaskChange({ name: e.target.value })}
+          placeholder={`Enter ${formData.type} name`}
+          disabled={state.loading}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="description">Description</Label>
+        <Textarea
+          id="description"
+          value={formData.description}
+          onChange={(e) => handleTaskChange({ description: e.target.value })}
+          placeholder={`Enter ${formData.type} description`}
+          rows={3}
+          disabled={state.loading}
+        />
+      </div>
+
+      {formData.type === 'project' ? (
+        <div className="space-y-2">
+          <Label htmlFor="startDate">Start Date</Label>
+          <Input
+            id="startDate"
+            type="date"
+            value={new Date(formData.startDate).toISOString().split('T')[0]}
+            onChange={(e) => {
+              const newStartDate = new Date(e.target.value).getTime()
+              handleTaskChange({
+                startDate: newStartDate,
+                endDate: newStartDate + (formData.duration * 24 * 60 * 60 * 1000),
+              })
+            }}
+            disabled={state.loading}
+          />
+        </div>
+      ) : formData.type !== 'milestone' && (
+        <div className="space-y-2">
+          <Label htmlFor="duration">Duration (days)</Label>
+          <Input
+            id="duration"
+            type="number"
+            min="1"
+            value={formData.duration}
+            onChange={(e) => {
+              const newDuration = Number(e.target.value)
+              handleTaskChange({
+                duration: newDuration,
+                endDate: formData.startDate + newDuration * 24 * 60 * 60 * 1000,
+              })
+            }}
+            placeholder="Enter duration"
+            disabled={state.loading}
+          />
+        </div>
+      )}
+
+      {formData.type !== 'project' && projectTasks.length > 0 && (
+        <div className="space-y-2">
+          <Label htmlFor="dependencies">Dependencies</Label>
+          <select
+            id="dependencies"
+            multiple
+            value={formData.dependencies}
+            onChange={(e) =>
+              handleTaskChange({
+                dependencies: Array.from(
+                  e.target.selectedOptions,
+                  (option) => option.value
+                ),
+              })
+            }
+            className="w-full rounded-md border border-input bg-transparent px-3 py-2 min-h-[100px]"
+            disabled={state.loading}
+          >
+            {projectTasks.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}
+              </option>
+            ))}
+          </select>
+          <p className="text-sm text-muted-foreground">
+            Hold Ctrl/Cmd to select multiple tasks
+          </p>
+        </div>
+      )}
+
+      <Accordion type="single" collapsible>
+        <AccordionItem value="details">
+          <AccordionTrigger>More Details</AccordionTrigger>
+          <AccordionContent>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="progress">Progress (%)</Label>
+                <Input
+                  id="progress"
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={formData.progress}
+                  onChange={(e) =>
+                    handleTaskChange({
+                      progress: Number(e.target.value),
+                    })
+                  }
+                  disabled={state.loading}
+                />
+              </div>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
+
+      <div className="flex justify-end pt-4">
+        <Button type="submit" disabled={state.loading}>
+          {modalMode === 'add' ? `Create ${formData.type}` : `Update ${formData.type}`}
+        </Button>
+      </div>
+    </form>
+  )
 }

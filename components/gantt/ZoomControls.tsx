@@ -1,38 +1,60 @@
-import React from 'react'
-import { Plus, Minus, RotateCcw } from 'lucide-react'
+import { Button } from "@/components/ui/button"
+import { Minus, Plus, RotateCcw } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 interface ZoomControlsProps {
-	onZoomIn: () => void
-	onZoomOut: () => void
-	onReset: () => void
+  onZoomIn: () => void
+  onZoomOut: () => void
+  onReset: () => void
+  className?: string
+  disabled?: {
+    zoomIn?: boolean
+    zoomOut?: boolean
+    reset?: boolean
+  }
 }
 
-const ZoomControls = ({ onZoomIn, onZoomOut, onReset }: ZoomControlsProps) => {
-	return (
-		<div className="flex gap-2 p-2 bg-background rounded-lg shadow-sm">
-			<button
-				onClick={onZoomIn}
-				className="p-1 hover:bg-muted rounded"
-				aria-label="Zoom in"
-			>
-				<Plus size={16} />
-			</button>
-			<button
-				onClick={onZoomOut}
-				className="p-1 hover:bg-muted rounded"
-				aria-label="Zoom out"
-			>
-				<Minus size={16} />
-			</button>
-			<button
-				onClick={onReset}
-				className="p-1 hover:bg-muted rounded"
-				aria-label="Reset zoom"
-			>
-				<RotateCcw size={16} />
-			</button>
-		</div>
-	)
-}
+export function ZoomControls({
+  onZoomIn,
+  onZoomOut,
+  onReset,
+  className,
+  disabled
+}: ZoomControlsProps) {
+  return (
+    <div className={cn("flex items-center gap-2", className)}>
+      <Button
+        variant="outline"
+        size="icon"
+        onClick={onZoomIn}
+        disabled={disabled?.zoomIn}
+        className="h-8 w-8"
+      >
+        <Plus className="h-4 w-4" />
+        <span className="sr-only">Zoom In</span>
+      </Button>
 
-export default ZoomControls
+      <Button
+        variant="outline"
+        size="icon"
+        onClick={onZoomOut}
+        disabled={disabled?.zoomOut}
+        className="h-8 w-8"
+      >
+        <Minus className="h-4 w-4" />
+        <span className="sr-only">Zoom Out</span>
+      </Button>
+
+      <Button
+        variant="outline"
+        size="icon"
+        onClick={onReset}
+        disabled={disabled?.reset}
+        className="h-8 w-8"
+      >
+        <RotateCcw className="h-4 w-4" />
+        <span className="sr-only">Reset Zoom</span>
+      </Button>
+    </div>
+  )
+}

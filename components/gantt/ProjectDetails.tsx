@@ -1,89 +1,84 @@
-'use client'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { useTasksContext } from '@/hooks/useTasksContext'
+import { TaskActionButton } from './TaskActionButton'
+import { differenceInDays } from 'date-fns'
 
-import { Project } from '@/types/project'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Calendar, ListTodo } from 'lucide-react'
+export function ProjectDetails() {
+  const { state, getChildTasks } = useTasksContext()
+  const selectedProject = state.tasks.find(t => t.id === state.selectedTask?.id)
 
-interface ProjectDetailsProps {
-	project: Project
-	onUpdate: (project: Project) => void
-	variant?: 'full' | 'compact'
-}
+  if (!selectedProject || selectedProject.type !== 'project') {
+    return null
+  }
 
-export function ProjectDetails({
-	project,
-	onUpdate,
-	variant = 'full',
-}: ProjectDetailsProps) {
-	const handleDateChange = (date: string) => {
-		const newStartDate = new Date(date).getTime()
-		onUpdate({
-			...project,
-			startDate: newStartDate,
-			endDate: newStartDate + (project.endDate - project.startDate),
-		})
-	}
+  const childTasks = getChildTasks(selectedProject.id)
+  const taskCount = childTasks.length
+  const duration = differenceInDays(
+    new Date(selectedProject.endDate),
+    new Date(selectedProject.startDate)
+  )
 
-	if (variant === 'compact') {
-		return (
-			<div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
-				<div className="flex items-center gap-2">
-					<Calendar className="h-4 w-4" />
-					<Label>Start Date</Label>
-					<Input
-						type="date"
-						value={
-							new Date(project.startDate)
-								.toISOString()
-								.split('T')[0]
-						}
-						onChange={(e) => handleDateChange(e.target.value)}
-						className="h-8 w-auto"
-					/>
-				</div>
-				<div className="flex items-center gap-2">
-					<ListTodo className="h-4 w-4" />
-					<span>Tasks: {project.tasks.length}</span>
-				</div>
-			</div>
-		)
-	}
-
-	return (
-		<div className="p-6 border rounded">
-			<h2 className="text-xl font-semibold mb-4">Project Details</h2>
-			<div className="space-y-4">
-				<div>
-					<h3 className="font-medium">Name</h3>
-					<p>{project.name}</p>
-				</div>
-				<div>
-					<Label>Project Start Date</Label>
-					<Input
-						type="date"
-						value={
-							new Date(project.startDate)
-								.toISOString()
-								.split('T')[0]
-						}
-						onChange={(e) => handleDateChange(e.target.value)}
-						className="mt-1"
-					/>
-				</div>
-				<div>
-					<h3 className="font-medium">Start Date</h3>
-					<p>{new Date(project.startDate).toLocaleDateString()}</p>
-				</div>
-				<div>
-					<h3 className="font-medium">End Date</h3>
-					<p>{new Date(project.endDate).toLocaleDateString()}</p>
-				</div>
-				<div>
-					<h3 className="font-medium">Tasks</h3>
-					<p>{project.tasks.length} tasks</p>
-				</div>
-			</div>
-		</div>
-	)
+  return (
+    <Card>
+      <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
+        <div className="flex items-center gap-4">
+          <h2 className="text-lg font-semibold">
+            {selectedProject.name}
+          </h2>
+          <div className="flex gap-2">
+            <TaskActionButton
+              action="edit"
+              task={selectedProject}
+              type="project"
+              showText={false}
+              wrapper="button"
+            />
+            <TaskActionButton
+              action="delete"
+              task={selectedProject}
+              type="project"
+              showText={false}
+              wrapper="button"
+            />
+          </div>
+        </div>
+        <TaskActionButton
+          action="add"
+          task={selectedProject}
+          type="task"
+          showText={true}
+          wrapper="button"
+        />
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-4 gap-4 mb-4">
+          <div>
+            <p className="text-sm text-muted-foreground">Start Date</p>
+            <p className="font-medium">
+              {new Date(selectedProject.startDate).toLocaleDateString()}
+            </p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">End Date</p>
+            <p className="font-medium">
+              {new Date(selectedProject.endDate).toLocaleDateString()}
+            </p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Duration</p>
+            <p className="font-medium">{duration} days</p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Tasks</p>
+            <p className="font-medium">{taskCount}</p>
+          </div>
+        </div>
+        {selectedProject.description && (
+          <p className="text-sm text-muted-foreground">
+            {selectedProject.description}
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  )
 }
