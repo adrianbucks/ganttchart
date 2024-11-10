@@ -1,84 +1,48 @@
-import { differenceInDays } from "date-fns"
-import { cn } from "@/lib/utils"
 import { Task } from "@/types/task"
+import { type ChartDimensions, calculateTaskPosition, generateDependencyPath } from "@/lib/visualization-utils"
 
 interface ChartDependencyProps {
-  fromTask: Task
-  toTask: Task
-  hoveredTaskId: string | null
+  task: Task
+  tasks: Task[]
+  dimensions: ChartDimensions
   arrowStyle: 'curved' | 'squared'
-  dimensions: {
-    HEADER_HEIGHT: number
-    ROW_HEIGHT: number
-    LABEL_WIDTH: number
-    DAY_WIDTH: number
-  }
-  startDate: Date
-  customColors?: {
-    arrow?: string
-    highlighted?: string
-  }
 }
 
 export function ChartDependency({
-  fromTask,
-  toTask,
-  hoveredTaskId,
-  arrowStyle,
+  task,
+  tasks,
   dimensions,
-  startDate,
-  customColors
+  arrowStyle
 }: ChartDependencyProps) {
-  const { HEADER_HEIGHT, ROW_HEIGHT, LABEL_WIDTH, DAY_WIDTH } = dimensions
-
-  const getXFromDate = (date: Date) => {
-    const days = differenceInDays(date, startDate)
-    return LABEL_WIDTH + days * DAY_WIDTH
-  }
-
-  const fromX = getXFromDate(fromTask.endDate)
-  const fromY = fromTask.order * ROW_HEIGHT + HEADER_HEIGHT + ROW_HEIGHT / 2
-  const toX = getXFromDate(toTask.startDate)
-  const toY = toTask.order * ROW_HEIGHT + HEADER_HEIGHT + ROW_HEIGHT / 2
-
-  const getDependencyPath = () => {
-    if (arrowStyle === 'curved') {
-      const midX = (fromX + toX) / 2
-      return `M ${fromX} ${fromY} C ${midX} ${fromY}, ${midX} ${toY}, ${toX} ${toY}`
-    } else {
-      const midY = (fromY + toY) / 2
-      const offset = 10
-      return `M ${fromX} ${fromY} 
-              H ${fromX + offset} 
-              V ${midY} 
-              H ${toX - offset} 
-              V ${toY} 
-              H ${toX}`
-    }
-  }
-
-  const isHighlighted = hoveredTaskId === fromTask.id || hoveredTaskId === toTask.id
+  if (!task.dependencies?.length) return null
 
   return (
     <>
-      <path
-        d={getDependencyPath()}
-        className={cn(
-          "fill-none transition-all",
-          isHighlighted
-            ? cn("stroke-primary stroke-2", customColors?.highlighted)
-            : cn("stroke-muted-foreground stroke-1", customColors?.arrow)
-        )}
-        markerEnd="url(#arrowhead)"
-      />
-      
-      {/* Optional: Add interaction area for hover effects */}
-      <path
-        d={getDependencyPath()}
-        className="fill-none stroke-transparent stroke-[8px] cursor-pointer"
-        onMouseEnter={() => {/* Optional hover handler */}}
-        onMouseLeave={() => {/* Optional hover handler */}}
-      />
+      {task.dependencies.map(depId => {
+        const dependencyTask = tasks.find(t => t.id === depId)
+        if (!dependencyTask) return null
+
+        const startPosition = calculateTaskPosition(dependencyTask, tasks.indexOf(dependencyTask), dimensions, task.startDate)
+        const endPosition = calculateTaskPosition(task, tasks.indexOf(task), dimensions, task.startDate)
+
+        return (
+          <svg
+            key={`${task.id}-${depId}`}
+            className="absolute top-0 left-0 pointer-events-none"
+            style={{
+              width: dimensions.CHART_WIDTH,
+              height: dimensions.CHART_HEIGHT
+            }}
+          >
+            <path
+              d={generateDependencyPath(startPosition, endPosition, arrowStyle)}
+              className="stroke-muted-foreground"
+              fill="none"
+              strokeWidth={1}
+            />
+          </svg>
+        )
+      })}
     </>
   )
 }

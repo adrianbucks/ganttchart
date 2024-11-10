@@ -1,118 +1,132 @@
-import { useState, useMemo, useRef } from "react"
-import { Task } from "@/types/task"
-import { cn } from "@/lib/utils"
-import { useChartZoom } from "@/hooks/useChartZoom"
-import { ChartHeader } from "./ChartHeader"
-import { ChartGrid } from "./ChartGrid"
-import { ChartTask } from "./ChartTask"
-import { ChartDependency } from "./ChartDependency"
-import { ChartControls } from "./ChartControls"
-import { ChartSidebar } from "./ChartSidebar"
-import { ChartScrollContainer } from "./ChartScrollContainer"
-import { ChartDateIndicator } from "./ChartDateIndicator"
-import { ChartTaskDependencyEditor } from "./ChartTaskDependencyEditor"
+import { useState } from 'react'
+import { useChartZoom } from '@/hooks/useChartZoom'
+import { ChartHeader } from './ChartHeader'
+import { ChartGrid } from './ChartGrid'
+import { ChartTask } from './ChartTask'
+import { ChartDependency } from './ChartDependency'
+import { ChartControls } from './ChartControls'
+import { ChartScrollContainer } from './ChartScrollContainer'
+import { ChartDateIndicator } from './ChartDateIndicator'
+import { ChartSidebar } from './ChartSidebar'
+import { useTasksContext } from '@/hooks/useTasksContext'
+import { 
+  calculateChartDimensions, 
+  generateTimelineDates, 
+  calculateTaskPosition,
+  type ChartSettings 
+} from '@/lib/visualization-utils'
 
+interface GanttChartProps extends Partial<ChartSettings> {
+	className?: string
+}
 
 export function GanttChart({
-    projectName = "Enhanced Project Timeline",
-    tasks: propTasks,
-    startDate: propStartDate = new Date(2024, 0, 1),
-    endDate: propEndDate = new Date(2024, 2, 15),
-    showTaskLabels = true,
-    className,
-    granularity = 'day',
-  }: GanttChartProps) {
-    const [hoveredTaskId, setHoveredTaskId] = useState<string | null>(null)
-    const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
-    const [arrowStyle, setArrowStyle] = useState<'curved' | 'squared'>('curved')
-    
-    const { dayWidth, zoomIn, zoomOut, reset, disabled } = useChartZoom()
-    
-    const dimensions = {
-      CHART_HEIGHT: 500,
-      HEADER_HEIGHT: 80,
-      ROW_HEIGHT: 40,
-      LABEL_WIDTH: 200,
-      DAY_WIDTH: dayWidth,
-    }
+  showTaskLabels = true,
+  granularity = 'day',
+}: GanttChartProps) {
+  const [hoveredTaskId, setHoveredTaskId] = useState<string | null>(null)
+  const [arrowStyle, setArrowStyle] = useState<'curved' | 'squared'>('curved')
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
+  const { dayWidth, zoomIn, zoomOut, reset, disabled } = useChartZoom()
+  const { state } = useTasksContext()
+
+  const selectedProject = state.selectedTask
+  if (!selectedProject || selectedProject.type !== 'project') return null
+
+  const projectTasks = state.tasks.filter(t => t.parentTask === selectedProject.id)
   
-    return (
-      <div className={cn("space-y-4", className)}>
-        <ChartControls
-          onZoomIn={zoomIn}
-          onZoomOut={zoomOut}
-          onReset={reset}
-          onGranularityChange={() => {}}
-          onArrowStyleToggle={() => setArrowStyle(prev => prev === 'curved' ? 'squared' : 'curved')}
-          granularity={granularity}
-          arrowStyle={arrowStyle}
-          zoomDisabled={disabled}
-        />
-  
-        <ChartScrollContainer width={width} height={height}>
-          <svg width={dimensions.CHART_WIDTH} height={dimensions.CHART_HEIGHT}>
-            <ChartHeader
-              dates={dates}
-              granularity={granularity}
-              dimensions={dimensions}
-            />
-            
-            <ChartGrid
-              dates={dates}
-              dimensions={dimensions}
-              granularity={granularity}
-            />
-  
-            <ChartSidebar
-              tasks={tasks}
-              dimensions={dimensions}
-              expandedGroups={expandedGroups}
-              onToggleGroup={onToggleGroup}
-              onTaskAction={onTaskAction}
-            />
-  
-            {tasks.map(task => (
+  const dimensions = calculateChartDimensions(
+    projectTasks,
+    dayWidth,
+    selectedProject.startDate,
+    selectedProject.endDate
+  )
+
+  const dates = generateTimelineDates(selectedProject.startDate, selectedProject.endDate)
+
+  const handleToggleGroup = (groupId: string) => {
+    setExpandedGroups(prev => {
+      const next = new Set(prev)
+      if (next.has(groupId)) {
+        next.delete(groupId)
+      } else {
+        next.add(groupId)
+      }
+      return next
+    })
+  }
+
+  return (
+    <div className="space-y-4">
+      <ChartControls
+        onZoomIn={zoomIn}
+        onZoomOut={zoomOut}
+        onReset={reset}
+		onGranularityChange={()=> {}}
+		onTimeframeChange={() => {}}
+        onArrowStyleToggle={() => setArrowStyle(prev => prev === 'curved' ? 'squared' : 'curved')}
+        granularity={granularity}
+        arrowStyle={arrowStyle}
+        zoomDisabled={disabled}
+      />
+      
+      <ChartScrollContainer dimensions={dimensions}>
+        <svg 
+          width={dimensions.CHART_WIDTH} 
+          height={dimensions.CHART_HEIGHT}
+        >
+          <ChartSidebar
+            tasks={projectTasks}
+            dimensions={dimensions}
+            expandedGroups={expandedGroups}
+            onToggleGroup={handleToggleGroup}
+          />
+
+          <ChartHeader
+            dates={dates}
+            granularity={granularity}
+            dimensions={dimensions}
+          />
+          
+          <ChartGrid
+            dates={dates}
+            dimensions={dimensions}
+            granularity={granularity}
+          />
+
+          <ChartDateIndicator
+            dimensions={dimensions}
+            startDate={new Date(selectedProject.startDate)}
+          />
+
+          {projectTasks.map((task, index) => {
+            const position = calculateTaskPosition(task, index, dimensions, selectedProject.startDate)
+            return (
               <ChartTask
                 key={task.id}
                 task={task}
+                index={index}
                 dimensions={dimensions}
-                isHovered={hoveredTaskId === task.id}
-                isSelected={selectedTaskId === task.id}
-                onHover={setHoveredTaskId}
-                onSelect={setSelectedTaskId}
+                position={position}
+                showTaskLabels={showTaskLabels}
+                hoveredTaskId={hoveredTaskId}
+                selectedTaskId={state.taskToAction?.id || null}
+                onTaskHover={setHoveredTaskId}
               />
-            ))}
-  
-            {tasks.map(task => task.dependencies?.map(depId => {
-              const fromTask = tasks.find(t => t.id === depId)
-              if (!fromTask) return null
-              return (
-                <ChartDependency
-                  key={`${depId}-${task.id}`}
-                  fromTask={fromTask}
-                  toTask={task}
-                  hoveredTaskId={hoveredTaskId}
-                  arrowStyle={arrowStyle}
-                  dimensions={dimensions}
-                  startDate={propStartDate}
-                />
-              )
-            }))}
-  
-            <ChartDateIndicator
+            )
+          })}
+
+          {projectTasks.map((task) => (
+            <ChartDependency
+              key={`dep-${task.id}`}
+              task={task}
+              tasks={state.tasks}
               dimensions={dimensions}
-              startDate={propStartDate}
+              arrowStyle={arrowStyle}
             />
-          </svg>
-        </ChartScrollContainer>
-  
-        <ChartTaskDependencyEditor
-          tasks={tasks}
-          dimensions={dimensions}
-          onAddDependency={onAddDependency}
-          onRemoveDependency={onRemoveDependency}
-        />
-      </div>
-    )
-  }
-  
+          ))}
+        </svg>
+      </ChartScrollContainer>
+    </div>
+  )
+}

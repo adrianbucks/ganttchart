@@ -1,18 +1,14 @@
-import { Button } from "@/components/ui/button"
-import { ChevronDown, ChevronRight, Plus } from "lucide-react"
-import { Task } from "@/types/task"
-import { TaskActionButton } from "./TaskActionButton"
+import { Button } from '@/components/ui/button'
+import { ChevronDown, ChevronRight } from 'lucide-react'
+import { Task } from '@/types/task'
+import { TaskActionButton } from './TaskActionButton'
+import { ChartDimensions } from '@/lib/visualization-utils'
 
 interface ChartSidebarProps {
   tasks: Task[]
-  dimensions: {
-    LABEL_WIDTH: number
-    ROW_HEIGHT: number
-    HEADER_HEIGHT: number
-  }
+  dimensions: ChartDimensions
   expandedGroups: Set<string>
   onToggleGroup: (groupId: string) => void
-  onTaskAction: (action: 'add' | 'edit' | 'delete', task: Task) => void
   className?: string
 }
 
@@ -21,23 +17,21 @@ export function ChartSidebar({
   dimensions,
   expandedGroups,
   onToggleGroup,
-  onTaskAction,
-  className
+  className,
 }: ChartSidebarProps) {
-  const { LABEL_WIDTH, ROW_HEIGHT, HEADER_HEIGHT } = dimensions
-
   const renderTaskRow = (task: Task, level: number = 0) => {
-    const hasChildren = tasks.some(t => t.parentTask === task.id)
+    const hasChildren = tasks.some((t) => t.parentTask === task.id)
     const isExpanded = expandedGroups.has(task.id)
     const indent = level * 20
+	const verticalPosition = (tasks.indexOf(task) + 1) * dimensions.ROW_HEIGHT + dimensions.HEADER_HEIGHT
 
     return (
       <g key={task.id}>
         <foreignObject
           x={indent}
-          y={task.order * ROW_HEIGHT + HEADER_HEIGHT}
-          width={LABEL_WIDTH - indent}
-          height={ROW_HEIGHT}
+          y={verticalPosition}
+          width={dimensions.LABEL_WIDTH - indent}
+          height={dimensions.ROW_HEIGHT}
         >
           <div className="flex items-center h-full px-2 gap-2">
             {hasChildren && (
@@ -54,9 +48,9 @@ export function ChartSidebar({
                 )}
               </Button>
             )}
-            
+
             <span className="flex-1 truncate">{task.name}</span>
-            
+
             <div className="flex items-center gap-1">
               <TaskActionButton
                 action="add"
@@ -83,25 +77,18 @@ export function ChartSidebar({
 
   return (
     <g className={className}>
-      {/* Header */}
       <foreignObject
         x={0}
         y={0}
-        width={LABEL_WIDTH}
-        height={HEADER_HEIGHT}
+        width={dimensions.LABEL_WIDTH}
+        height={dimensions.HEADER_HEIGHT}
       >
         <div className="h-full flex items-center px-4 bg-muted/50">
           <span className="font-medium">Tasks</span>
         </div>
       </foreignObject>
 
-      {/* Task Rows */}
-      {tasks.map(task => {
-        if (!task.parentTask) {
-          return renderTaskRow(task)
-        }
-        return null
-      })}
+      {tasks.map((task) => renderTaskRow(task))}
     </g>
   )
 }
