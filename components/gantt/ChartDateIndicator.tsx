@@ -5,7 +5,7 @@ import { ChartDimensions, calculateDateXPosition } from "@/lib/visualization-uti
 
 interface ChartDateIndicatorProps {
   dimensions: ChartDimensions
-  startDate: Date
+  startDate: number
   showCurrentTime?: boolean
   customColors?: {
     line?: string
@@ -31,7 +31,7 @@ export function ChartDateIndicator({
     return () => clearInterval(interval)
   }, [showCurrentTime])
 
-  const xPosition = calculateDateXPosition(now, startDate, dimensions)
+  const xPosition = calculateDateXPosition(now.getTime(), startDate, dimensions)
 
   // Don't render if current date is outside the visible range
   if (xPosition < dimensions.LABEL_WIDTH) return null
