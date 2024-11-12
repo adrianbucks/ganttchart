@@ -22,12 +22,18 @@ import {
   import { useTasksContext } from '@/hooks/useTasksContext'
   import { TaskActionButton } from './TaskActionButton'
   import { Task } from '@/types/task'
+import { cn } from '@/lib/utils'
+import { LoadingSpinner } from '@/components/gantt/LoadingSpinner'
   
   export function AppSidebar() {
 	const { setOpenMobile, isMobile } = useSidebar()
-	const { state, selectTask } = useTasksContext()
-  
-	const projects = state.tasks.filter((task) => task.type === 'project')
+	const { selectTask, getProjects, state } = useTasksContext()
+
+	if (state.loading) {
+		return (
+			<LoadingSpinner />
+		  )
+	  }
   
 	const handleProjectSelect = (project: Task) => {
 	  selectTask(project)
@@ -35,6 +41,8 @@ import {
 		setOpenMobile(false)
 	  }
 	}
+
+	const selectedProject = state.selectedTask
   
 	return (
 	  <Sidebar side="left" variant="sidebar" collapsible="offcanvas">
@@ -53,12 +61,12 @@ import {
 			</SidebarGroupAction>
 			<SidebarGroupContent>
 			  <SidebarMenu>
-				{projects.map((project) => (
+				{getProjects().map((project) => (
 				  <SidebarMenuItem key={project.id}>
 					<SidebarMenuButton
 					  onClick={() => handleProjectSelect(project)}
 					>
-					  <span>{project.name}</span>
+					  <span className={cn(project.id === selectedProject?.id && 'bold')}>{project.name}</span>
 					</SidebarMenuButton>
 					<div className="hidden md:block">
 					  <DropdownMenu>

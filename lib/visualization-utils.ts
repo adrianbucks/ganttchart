@@ -29,11 +29,11 @@ export interface ChartDimensions {
   }
 
   export function calculateDateXPosition(
-	date: Date,
-	startDate: Date,
+	date: number,
+	startDate: number,
 	dimensions: ChartDimensions
   ): number {
-	const diffTime = Math.abs(date.getTime() - startDate.getTime())
+	const diffTime = Math.abs(date - startDate)
 	const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
 	return dimensions.LABEL_WIDTH + (diffDays * dimensions.DAY_WIDTH)
   }

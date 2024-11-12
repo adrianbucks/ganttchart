@@ -13,6 +13,7 @@ export interface TaskVisualSettings {
 export interface Task {
 	id: string
 	name: string
+	description?: string
 	type: TaskType
 	startDate: number
 	endDate: number

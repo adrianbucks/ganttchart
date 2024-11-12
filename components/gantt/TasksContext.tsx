@@ -1,13 +1,15 @@
 import { createContext, useEffect, useReducer } from 'react'
 import { Task } from '@/types/task'
 
-interface TasksState {
+export interface TasksState {
   tasks: Task[]
   selectedTask: Task | null
   taskToAction: Task | null
+  taskHovered: string | null
   modalOpen: boolean
   modalMode: 'add' | 'edit' | 'delete'
   taskType: Task['type']
+  arrowHead: 'curved' | 'squared'
   loading: boolean
   error: string | null
 }
@@ -20,16 +22,20 @@ type TasksAction =
   | { type: 'DELETE_TASK'; payload: string }
   | { type: 'SET_ERROR'; payload: string }
   | { type: 'SET_TASK_TO_ACTION'; payload: Task }
+  | { type: 'SET_TASK_HOVERED'; payload: string }
   | { type: 'SET_MODAL_STATE'; payload: { open: boolean; mode: TasksState['modalMode'] } }
   | { type: 'SET_TASK_TYPE'; payload: Task['type'] }
+  | { type: 'SET_ARROW_HEAD'; payload: TasksState['arrowHead'] }
 
 const initialState: TasksState = {
   tasks: [],
   selectedTask: null,
   taskToAction: null,
+  taskHovered: null,
   modalOpen: false,
   modalMode: 'add',
   taskType: 'task',
+  arrowHead: 'curved',
   loading: false,
   error: null
 }
@@ -41,9 +47,12 @@ export const TasksContext = createContext<{
 	updateTask: (task: Task, updatedTasks: Task[]) => void
 	deleteTask: (taskId: string) => void
 	setTaskToAction: (task: Task) => void
+  setTaskHovered: (taskId: string) => void
 	setModalState: (open: boolean, mode: TasksState['modalMode']) => void
 	setTaskType: (type: Task['type']) => void
+  setArrowHead: (arrowHead: TasksState['arrowHead']) => void
 	getChildTasks: (parentId: string) => Task[]
+  getProjects: () => Task[]
   }>({
 	state: initialState,
 	selectTask: () => {},
@@ -51,9 +60,12 @@ export const TasksContext = createContext<{
 	updateTask: () => {},
 	deleteTask: () => {},
 	setTaskToAction: () => {},
+  setTaskHovered: () => {},
 	setModalState: () => {},
 	setTaskType: () => {},
-	getChildTasks: () => []
+  setArrowHead: () => {},
+	getChildTasks: () => [],
+  getProjects: () => [],
   })
   
 
@@ -85,6 +97,8 @@ function tasksReducer(state: TasksState, action: TasksAction): TasksState {
     }
     case 'SET_TASK_TO_ACTION':
       return { ...state, taskToAction: action.payload }
+    case 'SET_TASK_HOVERED':
+      return { ...state, taskHovered: action.payload }
     case 'SET_MODAL_STATE':
       return {
         ...state,
@@ -93,6 +107,8 @@ function tasksReducer(state: TasksState, action: TasksAction): TasksState {
       }
     case 'SET_TASK_TYPE':
       return { ...state, taskType: action.payload }
+    case 'SET_ARROW_HEAD':
+      return { ...state, arrowHead: action.payload }
     case 'SET_ERROR':
       return { ...state, error: action.payload, loading: false }
     default:
@@ -125,18 +141,42 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
 
   const addTask = (task: Task, updatedTasks: Task[]) => {
     dispatch({ type: 'SET_TASKS', payload: updatedTasks })
+    // If there's a selected project, refresh it with the updated data
+    if (state.selectedTask?.type === 'project') {
+      const updatedProject = updatedTasks.find(t => t.id === state.selectedTask?.id)
+      if (updatedProject) {
+        dispatch({ type: 'SELECT_TASK', payload: updatedProject })
+      }
+    }
   }
 
   const updateTask = (task: Task, updatedTasks: Task[]) => {
     dispatch({ type: 'SET_TASKS', payload: updatedTasks })
+    if (state.selectedTask?.type === 'project') {
+      const updatedProject = updatedTasks.find(t => t.id === state.selectedTask?.id)
+      if (updatedProject) {
+        dispatch({ type: 'SELECT_TASK', payload: updatedProject })
+      }
+    }
   }
 
   const deleteTask = (taskId: string) => {
     dispatch({ type: 'DELETE_TASK', payload: taskId })
+    // Refresh selected project after deletion
+  if (state.selectedTask?.type === 'project') {
+    const updatedProject = state.tasks.find(t => t.id === state.selectedTask?.id)
+    if (updatedProject) {
+      dispatch({ type: 'SELECT_TASK', payload: updatedProject })
+    }
+  }
   }
 
   const setTaskToAction = (task: Task) => {
     dispatch({ type: 'SET_TASK_TO_ACTION', payload: task })
+  }
+
+  const setTaskHovered = (taskId: string) => {
+    dispatch({ type: 'SET_TASK_HOVERED', payload: taskId })
   }
 
   const setModalState = (open: boolean, mode: TasksState['modalMode']) => {
@@ -147,8 +187,19 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: 'SET_TASK_TYPE', payload: type })
   }
 
+  const setArrowHead = (arrowHead: TasksState['arrowHead']) => {
+    dispatch({ type: 'SET_ARROW_HEAD', payload: arrowHead })
+  }
+
   const getChildTasks = (parentId: string) => {
     return state.tasks.filter((t) => t.parentTask === parentId)
+  }
+
+  const getProjects = () => {
+    if (!state.loading) {
+      return state.tasks.filter((t) => t.type === 'project')
+    }
+    return []
   }
 
   return (
@@ -160,9 +211,12 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
         updateTask,
         deleteTask,
         setTaskToAction,
+        setTaskHovered,
         setModalState,
         setTaskType,
+        setArrowHead,
         getChildTasks,
+        getProjects,
       }}
     >
       {children}

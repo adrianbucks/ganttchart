@@ -1,48 +1,48 @@
 import { Task } from "@/types/task"
-import { type ChartDimensions, calculateTaskPosition, generateDependencyPath } from "@/lib/visualization-utils"
+import { type ChartDimensions, calculateDateXPosition } from "@/lib/visualization-utils"
+import { useTasksContext } from '@/hooks/useTasksContext'
+import { cn } from '@/lib/utils'
 
 interface ChartDependencyProps {
-  task: Task
-  tasks: Task[]
+  fromTask: Task
+  toTask: Task
   dimensions: ChartDimensions
-  arrowStyle: 'curved' | 'squared'
 }
 
 export function ChartDependency({
-  task,
-  tasks,
+  fromTask,
+  toTask,
   dimensions,
-  arrowStyle
 }: ChartDependencyProps) {
-  if (!task.dependencies?.length) return null
+  const { state, getChildTasks } = useTasksContext()
+  const { taskHovered, selectedTask, arrowHead } = state
+  if (!selectedTask) return null
+  const projectTasks = getChildTasks(selectedTask.id)
+  const isHovered = taskHovered === fromTask.id || taskHovered === toTask.id
+
+  const getDependencyPath = (fromTask: Task, toTask: Task) => {
+    const fromX = calculateDateXPosition(fromTask.endDate, selectedTask.startDate, dimensions)
+    const fromY = projectTasks.indexOf(fromTask) * dimensions.ROW_HEIGHT + dimensions.HEADER_HEIGHT + dimensions.ROW_HEIGHT / 2
+    const toX = calculateDateXPosition(toTask.startDate, selectedTask.startDate, dimensions)
+    const toY = projectTasks.indexOf(toTask) * dimensions.ROW_HEIGHT + dimensions.HEADER_HEIGHT + dimensions.ROW_HEIGHT / 2
+
+    if (arrowHead === 'curved') {
+      const midX = (fromX + toX) / 2
+      return `M ${fromX} ${fromY} C ${midX} ${fromY}, ${midX} ${toY}, ${toX} ${toY}`
+    } else {
+      const midY = (fromY + toY) / 2
+      return `M ${fromX} ${fromY} H ${fromX + 10} V ${midY} H ${toX - 10} V ${toY} H ${toX}`
+    }
+  }
 
   return (
-    <>
-      {task.dependencies.map(depId => {
-        const dependencyTask = tasks.find(t => t.id === depId)
-        if (!dependencyTask) return null
-
-        const startPosition = calculateTaskPosition(dependencyTask, tasks.indexOf(dependencyTask), dimensions, task.startDate)
-        const endPosition = calculateTaskPosition(task, tasks.indexOf(task), dimensions, task.startDate)
-
-        return (
-          <svg
-            key={`${task.id}-${depId}`}
-            className="absolute top-0 left-0 pointer-events-none"
-            style={{
-              width: dimensions.CHART_WIDTH,
-              height: dimensions.CHART_HEIGHT
-            }}
-          >
-            <path
-              d={generateDependencyPath(startPosition, endPosition, arrowStyle)}
-              className="stroke-muted-foreground"
-              fill="none"
-              strokeWidth={1}
-            />
-          </svg>
-        )
-      })}
-    </>
-  )
+      <path
+        d={getDependencyPath(fromTask, toTask)}
+        className={cn(
+          "fill-none stroke-muted-foreground",
+          isHovered ? "stroke-primary stroke-2" : "stroke-1"
+        )}
+        markerEnd="url(#arrowhead)"
+      />
+    )
 }

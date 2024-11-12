@@ -3,16 +3,14 @@
 import { SidebarTrigger, SidebarProvider } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/gantt/AppSidebar'
 import { ProjectDetails } from '@/components/gantt/ProjectDetails'
-import { TasksProvider } from './TasksContext'
 import { useTasksContext } from '@/hooks/useTasksContext'
 import { TaskModal } from './TaskModal'
 import { TaskList } from './TaskList'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import GanttChart from './EnhancedGanttChart'
-import { Task } from '@/types/task'
+import { GanttChart } from './GanttChart'
 
-function Dashboard() {
-	const { state, getChildTasks } = useTasksContext()
+export function ProjectDashboard() {
+	const { state } = useTasksContext()
 
 	return (
 		<SidebarProvider defaultOpen={true}>
@@ -53,8 +51,6 @@ function Dashboard() {
 							</TabsContent>
 							<TabsContent value="gantt">
 								<GanttChart
-								projectName={state.selectedTask?.name}
-								tasks={getChildTasks(state.selectedTask?.id as string) as Task[]}
 								/>
 							</TabsContent>
 						</Tabs>
@@ -67,10 +63,3 @@ function Dashboard() {
 	)
 }
 
-export function ProjectDashboard() {
-	return (
-		<TasksProvider>
-			<Dashboard />
-		</TasksProvider>
-	)
-}

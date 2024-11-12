@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { useTasksContext } from '@/hooks/useTasksContext'
 import { useState } from 'react'
 import { projectTimes } from '@/lib/projectTimes'
-import { Task } from '@/types/task'
+import { Task, defaultTaskVisualSettings } from '@/types/task'
 import {
   Accordion,
   AccordionContent,
@@ -19,19 +19,24 @@ export function TaskForm() {
   const { state, addTask, updateTask, deleteTask, setModalState, getChildTasks } = useTasksContext()
   const { taskToAction, modalMode, taskType } = state
 
-  const [formData, setFormData] = useState(() => {
+  const [formData, setFormData] = useState<Task>(() => {
 	if (modalMode === 'add') {
 	  return {
 		id: crypto.randomUUID(),
 		name: '',
 		description: '',
+		type: taskType,
 		startDate: taskType === 'project' ? Date.now() : state.selectedTask?.startDate || Date.now(),
 		endDate: Date.now() + (taskType === 'project' ? 7 : 1) * 24 * 60 * 60 * 1000,
 		duration: taskType === 'project' ? 7 : 1,
 		progress: 0,
-		type: taskType,
-		parentTask: taskType === 'project' ? '' : state.selectedTask?.id || '',
+    order: 0,
 		dependencies: [],
+		parentTask: taskType === 'project' ? '' : state.selectedTask?.id || '',
+    slack: 0,
+    status: 'todo',
+    priority: 'medium',
+    visualSettings: defaultTaskVisualSettings,
 	  }
 	}
 	
@@ -39,18 +44,23 @@ export function TaskForm() {
 	  id: taskToAction?.id || '',
 	  name: taskToAction?.name || '',
 	  description: taskToAction?.description || '',
+	  type: taskToAction?.type || 'task',
 	  startDate: taskToAction?.startDate || Date.now(),
 	  endDate: taskToAction?.endDate || Date.now(),
 	  duration: taskToAction?.duration || 1,
 	  progress: taskToAction?.progress || 0,
-	  type: taskToAction?.type || 'task',
-	  parentTask: taskToAction?.parentTask || '',
+    order: taskToAction?.order || 0,
 	  dependencies: taskToAction?.dependencies || [],
+	  parentTask: taskToAction?.parentTask || '',
+    slack: taskToAction?.slack || 0,
+    status: taskToAction?.status || 'todo',
+    priority: taskToAction?.priority || 'medium',
+    visualSettings: taskToAction?.visualSettings || defaultTaskVisualSettings,
 	}
   })
   
 
-  const projectTasks = formData.type !== 'project' ? 
+  const projectTasks = formData.type !== 'project' && formData.parentTask ? 
     getChildTasks(formData.parentTask).filter(t => t.type === 'task' && t.id !== formData.id) : 
     []
 
@@ -79,7 +89,16 @@ export function TaskForm() {
   }
 
   const handleTaskChange = (updates: Partial<Task>) => {
-	setFormData(current => ({ ...current, ...updates }))
+    if (updates.duration) {
+      const newDuration = updates.duration
+      setFormData(current => ({ 
+        ...current, 
+        ...updates,
+        endDate: current.startDate + (newDuration * 24 * 60 * 60 * 1000)
+      }))
+    } else {
+      setFormData(current => ({ ...current, ...updates }))
+    }
   }  
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -98,11 +117,11 @@ export function TaskForm() {
 		addTask(taskToSave, updatedTasks)
 	  } else {
 		const parentProject = state.tasks.find(t => t.id === taskToSave.parentTask)!
-		const dependencies = state.tasks.filter(t => taskToSave.dependencies.includes(t.id))
+		const dependencies = state.tasks.filter(t => taskToSave.dependencies?.includes(t.id))
 		
 		taskToSave = {
 		  ...taskToSave,
-		  duration: taskToSave.type === 'milestone' ? 0 : 1,
+		  duration: taskToSave.type === 'milestone' ? 0 : taskToSave.duration,
 		  ...projectTimes.calculateTaskDates(taskToSave, parentProject.startDate, dependencies)
 		}
 		
@@ -150,7 +169,7 @@ export function TaskForm() {
 		}
 	  } else {
 		const parentProject = state.tasks.find(t => t.id === taskToSave.parentTask)!
-		const dependencies = state.tasks.filter(t => taskToSave.dependencies.includes(t.id))
+		const dependencies = state.tasks.filter(t => taskToSave.dependencies?.includes(t.id))
 		
 		taskToSave = {
 		  ...taskToSave,
