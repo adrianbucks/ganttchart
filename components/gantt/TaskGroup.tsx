@@ -1,6 +1,6 @@
 import React from 'react'
 import { ChevronDown, ChevronRight } from 'lucide-react'
-import { Task } from '@/types/project'
+import { Task } from '@/types/task'
 
 interface TaskGroupProps {
 	name: string
