@@ -2,7 +2,6 @@ import {
 	Sidebar,
 	SidebarContent,
 	SidebarGroup,
-	SidebarGroupAction,
 	SidebarGroupContent,
 	SidebarGroupLabel,
 	SidebarMenu,
@@ -48,17 +47,15 @@ import { LoadingSpinner } from '@/components/gantt/LoadingSpinner'
 	  <Sidebar side="left" variant="sidebar" collapsible="offcanvas">
 		<SidebarHeader>Your Projects</SidebarHeader>
 		<SidebarContent>
-		  <SidebarGroup>
-			<SidebarGroupLabel>Projects</SidebarGroupLabel>
-			<SidebarGroupAction>
-			  <TaskActionButton
+		<TaskActionButton
 				action="add"
 				task={{ parentTask: '', type: 'project' } as Task}
 				type="project"
-				showText={false}
-				wrapper="div"
+				showText={true}
+				wrapper="button"
 			  />
-			</SidebarGroupAction>
+		  <SidebarGroup>
+			<SidebarGroupLabel>Projects</SidebarGroupLabel>
 			<SidebarGroupContent>
 			  <SidebarMenu>
 				{getProjects().map((project) => (
