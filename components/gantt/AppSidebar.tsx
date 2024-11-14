@@ -53,6 +53,7 @@ import { LoadingSpinner } from '@/components/gantt/LoadingSpinner'
 				type="project"
 				showText={true}
 				wrapper="button"
+				className='mx-2'
 			  />
 		  <SidebarGroup>
 			<SidebarGroupLabel>Projects</SidebarGroupLabel>

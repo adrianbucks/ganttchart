@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button'
 import { PlusCircle, Pencil, Trash2 } from 'lucide-react'
 import { Task } from '@/types/task'
 import { useTasksContext } from '@/hooks/useTasksContext'
+import { cn } from '@/lib/utils'
 
 interface TaskActionButtonProps {
   action: 'add' | 'edit' | 'delete'
@@ -9,6 +10,7 @@ interface TaskActionButtonProps {
   showText?: boolean
   type?: Task['type']
   wrapper?: 'div' | 'button'
+  className?: string
 }
 
 const actionIcons = {
@@ -23,6 +25,7 @@ export function TaskActionButton({
   showText = true,
   type = 'task',
   wrapper = 'button',
+  className = '',
 }: TaskActionButtonProps) {
   const { setTaskToAction, setModalState, setTaskType } = useTasksContext()
   const Icon = actionIcons[action]
@@ -35,7 +38,7 @@ export function TaskActionButton({
   }
 
   return wrapper === 'div' ? (
-    <div onClick={handleAction} className="flex cursor-pointer">
+    <div onClick={handleAction} className={cn("flex cursor-pointer", className)}>
       <Icon className="h-4 w-4" />
       {showText && <span className="ml-2">{actionText}</span>}
     </div>
@@ -44,6 +47,7 @@ export function TaskActionButton({
       onClick={handleAction}
       variant={action === 'delete' ? 'destructive' : 'outline'}
       size="sm"
+      className={className}
     >
       <Icon className={showText ? 'mr-2 h-4 w-4' : 'h-4 w-4'} />
       {showText && actionText}

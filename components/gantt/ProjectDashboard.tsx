@@ -10,7 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { GanttChart } from './GanttChart'
 
 export function ProjectDashboard() {
-	const { state } = useTasksContext()
+	const { state, getProjects } = useTasksContext()
+	const { selectedTask } = state
 
 	return (
 		<SidebarProvider defaultOpen={true}>
@@ -34,7 +35,21 @@ export function ProjectDashboard() {
 					</header>
 
 					<main className="flex-1 min-h-0 p-4">
-						<Tabs
+						{getProjects().length == 0 ? (
+							<div className="flex items-center justify-center h-full">
+								<p className="text-muted-foreground">
+									Start by creating a project.
+								</p>
+							</div>
+						) : 
+						!selectedTask ? (
+							<div className="flex items-center justify-center h-full">
+								<p className="text-muted-foreground">
+									Select a project to view its tasks.
+								</p>
+							</div>
+						) : (
+							<Tabs
 							defaultValue="tasks-list"
 							className="flex flex-col flex-1 min-h-0"
 						>
@@ -50,10 +65,11 @@ export function ProjectDashboard() {
 								<TaskList />
 							</TabsContent>
 							<TabsContent value="gantt">
-								<GanttChart
-								/>
+								<GanttChart />
 							</TabsContent>
 						</Tabs>
+						)
+						}
 					</main>
 				</div>
 			</div>
