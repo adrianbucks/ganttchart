@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import { Toaster } from '@/components/ui/toaster'
 import localFont from 'next/font/local'
 import './globals.css'
+import { Analytics } from "@vercel/analytics/react"
 
 
 
@@ -35,6 +36,7 @@ export default function RootLayout({
 			>				
 				{children}
 				<SpeedInsights />
+				<Analytics />
 				<Toaster />
 			</body>
 		</html>
