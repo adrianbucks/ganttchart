@@ -66,38 +66,52 @@ export interface ChartDimensions {
 	tasks: Task[],
 	dayWidth: number,
 	startDate: number,
-	endDate: number
+	endDate: number,
   ): ChartDimensions {
+	const MIN_CHART_WIDTH = 800
+  
 	return {
 	  CHART_HEIGHT: tasks.length * 40 + 100,
 	  HEADER_HEIGHT: 80,
 	  ROW_HEIGHT: 40,
 	  LABEL_WIDTH: 200,
 	  DAY_WIDTH: dayWidth,
-	  CHART_WIDTH: differenceInDays(new Date(endDate), new Date(startDate)) * dayWidth + 200
+	  CHART_WIDTH: Math.max(
+		differenceInDays(new Date(endDate), new Date(startDate)) * dayWidth + 200,
+		MIN_CHART_WIDTH
+	  )
 	}
   }
+  
 
   export function calculateTaskPosition(
 	task: Task,
 	index: number,
 	dimensions: ChartDimensions,
-	projectStartDate: number
+	projectStartDate: number,
+	granularity: 'day' | 'week' | 'month'
   ): { left: number; top: number; width: number } {
+	const multiplier = granularity === 'month' ? 1/30 : granularity === 'week' ? 1/7 : 1
 	const dayOffset = differenceInDays(new Date(task.startDate), new Date(projectStartDate))
-	const taskDuration = differenceInDays(new Date(task.endDate), new Date(task.startDate))
+	
+	// Calculate duration in days without dividing by multiplier
+	const durationDays = differenceInDays(new Date(task.endDate), new Date(task.startDate))
 	
 	return {
-	  left: dimensions.LABEL_WIDTH + dayOffset * dimensions.DAY_WIDTH,
+	  left: dimensions.LABEL_WIDTH + Math.trunc(dayOffset * (dimensions.DAY_WIDTH / multiplier)),
 	  top: dimensions.HEADER_HEIGHT + index * dimensions.ROW_HEIGHT,
-	  width: Math.max(taskDuration * dimensions.DAY_WIDTH, dimensions.DAY_WIDTH)
+	  width: Math.trunc(durationDays * (dimensions.DAY_WIDTH / multiplier))
 	}
   }
+  
+  
 
-  export function generateTimelineDates(startDate: number, endDate: number): Date[] {
-	const timelineRange = differenceInDays(new Date(endDate), new Date(startDate)) + 1
-	return Array.from({ length: timelineRange }, (_, i) => addDays(new Date(startDate), i))
+  export function generateTimelineDates(startDate: number, endDate: number, granularity: 'day' | 'week' | 'month'): Date[] {
+	const increment = granularity === 'day' ? 1 : granularity === 'week' ? 1/7 : 1/30
+	const timelineRange = Math.ceil(differenceInDays(new Date(endDate), new Date(startDate)) / increment)
+	return Array.from({ length: timelineRange }, (_, i) => addDays(new Date(startDate), i * increment))
   }
+  
 
 // Transform tasks for network diagram visualization
 export function prepareNetworkData(tasks: Task[]) {

@@ -7,15 +7,14 @@ import {
 	ChevronRight,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useTasksContext } from '@/hooks/useTasksContext'
 
 interface ChartControlsProps {
 	onZoomIn: () => void
 	onZoomOut: () => void
 	onReset: () => void
-	onGranularityChange: (granularity: 'day' | 'week' | 'month') => void
 	onArrowStyleToggle: () => void
 	onTimeframeChange: (direction: 'prev' | 'next') => void
-	granularity: 'day' | 'week' | 'month'
 	arrowStyle: 'curved' | 'squared'
 	zoomDisabled: {
 		zoomIn?: boolean
@@ -29,14 +28,14 @@ export function ChartControls({
 	onZoomIn,
 	onZoomOut,
 	onReset,
-	onGranularityChange,
 	onArrowStyleToggle,
 	onTimeframeChange,
-	granularity,
 	arrowStyle,
 	zoomDisabled,
 	className,
 }: ChartControlsProps) {
+	const { state, setGranularity } = useTasksContext()
+	const { granularity } = state
 	return (
 		<div className={cn('flex items-center justify-between p-2', className)}>
 			<div className="flex items-center gap-4">
@@ -78,10 +77,10 @@ export function ChartControls({
 				<div className="flex items-center rounded-md border">
 					{(['day', 'week', 'month'] as const).map((view) => (
 						<Button
-							key={view}
+							key={`granularity-${view}`}
 							variant={granularity === view ? 'default' : 'ghost'}
 							size="sm"
-							onClick={() => onGranularityChange(view)}
+							onClick={() => setGranularity(view)}
 							className="capitalize"
 						>
 							<Calendar className="h-4 w-4 mr-2" />

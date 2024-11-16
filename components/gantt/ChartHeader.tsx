@@ -14,9 +14,9 @@ interface ChartHeaderProps {
 		style={{ height: dimensions.HEADER_HEIGHT }}
 	  >
 		<div className="flex" style={{ marginLeft: dimensions.LABEL_WIDTH }}>
-		  {dates.map((date) => (
+		  {dates.map((date, index) => (
 			<div
-			  key={date.toISOString()}
+				key={`header-${index}-${date.getTime()}`}
 			  className="flex-shrink-0 border-r border-border px-2 py-1 text-sm"
 			  style={{ width: dimensions.DAY_WIDTH }}
 			>

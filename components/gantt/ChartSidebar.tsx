@@ -26,7 +26,7 @@ export function ChartSidebar({
 	const verticalPosition = (tasks.indexOf(task) + 1) * dimensions.ROW_HEIGHT + dimensions.HEADER_HEIGHT
 
     return (
-      <g key={task.id}>
+      <g key={`task-row-${task.id}`}>
         <foreignObject
           x={indent}
           y={verticalPosition}

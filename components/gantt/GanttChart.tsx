@@ -20,28 +20,29 @@ interface GanttChartProps extends Partial<ChartSettings> {
 
 export function GanttChart({
 	showTaskLabels = true,
-	granularity = 'day',
 	className,
 }: GanttChartProps) {
-	const { dayWidth, zoomIn, zoomOut, reset, disabled } = useChartZoom()
+	
 	const { state, getChildTasks, setArrowHead } = useTasksContext()
+	const { selectedTask, granularity } = state
+	const { dayWidth, zoomIn, zoomOut, reset, disabled } = useChartZoom(granularity)
+	
+	if (!selectedTask || selectedTask.type !== 'project') return null
 
-	const selectedProject = state.selectedTask
-	if (!selectedProject || selectedProject.type !== 'project') return null
-
-	const projectTasks = getChildTasks(selectedProject.id)
+	const projectTasks = getChildTasks(selectedTask.id)
 	const { arrowHead } = state
 
 	const dimensions = calculateChartDimensions(
 		projectTasks,
 		dayWidth,
-		selectedProject.startDate,
-		selectedProject.endDate
+		selectedTask.startDate,
+		selectedTask.endDate,
 	)
 
 	const dates = generateTimelineDates(
-		selectedProject.startDate,
-		selectedProject.endDate
+		selectedTask.startDate,
+		selectedTask.endDate,
+		granularity
 	)
 
 	return (
@@ -51,14 +52,12 @@ export function GanttChart({
 					onZoomIn={zoomIn}
 					onZoomOut={zoomOut}
 					onReset={reset}
-					onGranularityChange={() => {}}
 					onTimeframeChange={() => {}}
 					onArrowStyleToggle={() =>
 						setArrowHead(
 							arrowHead === 'curved' ? 'squared' : 'curved'
 						)
 					}
-					granularity={granularity}
 					arrowStyle={arrowHead}
 					zoomDisabled={disabled}
 				/>
@@ -83,7 +82,7 @@ export function GanttChart({
 						{projectTasks.map((task) => {
 							return (
 								<ChartTask
-									key={task.id}
+									key={`${task.id}-${granularity}`}
 									task={task}
 									dimensions={dimensions}
 									showTaskLabels={showTaskLabels}
@@ -100,7 +99,7 @@ export function GanttChart({
 
 								return (
 									<ChartDependency
-										key={`${depId}-${task.id}`}
+										key={`dependency-${task.id}-to-${depId}-${granularity}`}
 										fromTask={fromTask}
 										toTask={task}
 										dimensions={dimensions}

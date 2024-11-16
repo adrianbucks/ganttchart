@@ -10,6 +10,7 @@ export interface TasksState {
   modalMode: 'add' | 'edit' | 'delete'
   taskType: Task['type']
   arrowHead: 'curved' | 'squared'
+  granularity: 'day' | 'week' | 'month'
   loading: boolean
   error: string | null
 }
@@ -26,6 +27,7 @@ type TasksAction =
   | { type: 'SET_MODAL_STATE'; payload: { open: boolean; mode: TasksState['modalMode'] } }
   | { type: 'SET_TASK_TYPE'; payload: Task['type'] }
   | { type: 'SET_ARROW_HEAD'; payload: TasksState['arrowHead'] }
+  | { type: 'SET_GRANULARITY'; payload: TasksState['granularity'] }
 
 const initialState: TasksState = {
   tasks: [],
@@ -36,6 +38,7 @@ const initialState: TasksState = {
   modalMode: 'add',
   taskType: 'task',
   arrowHead: 'curved',
+  granularity: 'day',
   loading: false,
   error: null
 }
@@ -51,6 +54,7 @@ export const TasksContext = createContext<{
 	setModalState: (open: boolean, mode: TasksState['modalMode']) => void
 	setTaskType: (type: Task['type']) => void
   setArrowHead: (arrowHead: TasksState['arrowHead']) => void
+  setGranularity: (granularity: TasksState['granularity']) => void
 	getChildTasks: (parentId: string) => Task[]
   getProjects: () => Task[]
   }>({
@@ -64,6 +68,7 @@ export const TasksContext = createContext<{
 	setModalState: () => {},
 	setTaskType: () => {},
   setArrowHead: () => {},
+  setGranularity: () => {},
 	getChildTasks: () => [],
   getProjects: () => [],
   })
@@ -109,6 +114,8 @@ function tasksReducer(state: TasksState, action: TasksAction): TasksState {
       return { ...state, taskType: action.payload }
     case 'SET_ARROW_HEAD':
       return { ...state, arrowHead: action.payload }
+    case 'SET_GRANULARITY':
+      return { ...state, granularity: action.payload }
     case 'SET_ERROR':
       return { ...state, error: action.payload, loading: false }
     default:
@@ -191,6 +198,10 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: 'SET_ARROW_HEAD', payload: arrowHead })
   }
 
+  const setGranularity = (granularity: TasksState['granularity']) => {
+    dispatch({ type: 'SET_GRANULARITY', payload: granularity })
+  }
+
   const getChildTasks = (parentId: string) => {
     return state.tasks.filter((t) => t.parentTask === parentId)
   }
@@ -215,6 +226,7 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
         setModalState,
         setTaskType,
         setArrowHead,
+        setGranularity,
         getChildTasks,
         getProjects,
       }}
